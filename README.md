@@ -38,34 +38,6 @@ Install Souffleur directly from the [Mozilla Add-ons website](https://addons.moz
 - `Ctrl+Shift+L`: Toggle the sidebar
 - `Alt+P`: Open the spotlight overlay
 
-## Development
-
-### Prerequisites
-
-- Firefox Browser
-- Node.js and npm
-- Basic knowledge of HTML, CSS, and JavaScript
-
-### Setup
-
-1. Clone the repository:
-   ```
-   git clone https://github.com/piotrowskiadam/souffleur.git
-   cd souffleur
-   ```
-
-2. Install dependencies:
-   ```
-   npm install
-   ```
-
-3. Start the development server:
-   ```
-   npm start
-   ```
-   This will open Firefox with the extension loaded.
-
-
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
