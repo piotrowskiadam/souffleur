@@ -1,0 +1,293 @@
+:root {
+    --background: #282A36;
+    --foreground: #F8F8F2;
+    --selection: #44475A;
+    --comment: #6272A4;
+    --red: #FF5555;
+    --orange: #FFB86C;
+    --yellow: #F1FA8C;
+    --green: #50FA7B;
+    --purple: #BD93F9;
+    --cyan: #8BE9FD;
+    --pink: #FF79C6;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Ubuntu', 'Helvetica', 'Arial', sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-variation-settings: "slnt" 0;
+}
+
+@supports (font-variation-settings: normal) {
+    :root {
+        font-family: 'Inter var', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Ubuntu', 'Helvetica', 'Arial', sans-serif;
+    }
+}
+
+body {
+    margin: 0;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: var(--background);
+    color: var(--foreground);
+}
+
+.header {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.header h1 {
+    margin: 0;
+    color: var(--purple);
+    font-size: 24px;
+}
+
+.subtitle {
+    margin: 8px 0 0 0;
+    color: var(--comment);
+    font-size: 14px;
+}
+
+#prompt-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    margin-bottom: 16px;
+}
+
+.prompt-item {
+    display: flex;
+    align-items: stretch;
+    background-color: var(--selection);
+    border: 1px solid var(--comment);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.prompt-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.prompt-item h3 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    color: var(--cyan);
+}
+
+.prompt-item p {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: var(--foreground);
+}
+
+#add-prompt-container {
+    margin-bottom: 20px;
+}
+
+#add-prompt-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--purple);
+    color: var(--background);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+#add-prompt-btn:hover {
+    background-color: var(--pink);
+    transform: translateY(-2px);
+}
+
+#add-prompt-form {
+    margin-top: 12px;
+    background-color: var(--selection);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--comment);
+}
+
+#new-prompt-title,
+#new-prompt-text,
+.edit-title,
+.edit-text {
+    width: 100%;
+    margin-bottom: 12px;
+    padding: 10px;
+    border: 1px solid var(--comment);
+    border-radius: 6px;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: inherit;
+}
+
+#new-prompt-text,
+.edit-text {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.prompt-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.prompt-buttons button {
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--background);
+    font-weight: bold;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.prompt-buttons button:hover {
+    transform: translateY(-1px);
+}
+
+.prompt-buttons button:active {
+    transform: translateY(1px);
+}
+
+.prompt-buttons .copy-btn {
+    position: relative;
+    background-color: var(--green);
+}
+
+.prompt-buttons .edit-btn {
+    background-color: var(--orange);
+}
+
+.prompt-buttons .delete-btn {
+    background-color: var(--red);
+}
+
+.prompt-buttons .copy-btn:hover {
+    background-color: var(--cyan);
+}
+
+.prompt-buttons .edit-btn:hover {
+    background-color: var(--yellow);
+}
+
+.prompt-buttons .delete-btn:hover {
+    background-color: var(--pink);
+}
+
+.edit-form {
+    padding: 12px;
+    background-color: var(--selection);
+    border-radius: 6px;
+    margin-top: 12px;
+}
+
+.edit-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.edit-buttons button {
+    background-color: var(--purple);
+    color: var(--background);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.edit-buttons button:hover {
+    background-color: var(--pink);
+    transform: translateY(-1px);
+}
+
+.edit-buttons button:active {
+    transform: translateY(1px);
+}
+
+.copied-label {
+    position: absolute;
+    background-color: var(--purple);
+    color: var(--background);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.copied-label.show {
+    opacity: 1;
+}
+
+#import-export-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    gap: 12px;
+}
+
+#import-prompts,
+#export-prompts {
+    background-color: var(--cyan);
+    color: var(--background);
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    flex-basis: 48%;
+    font-weight: bold;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+#import-prompts:hover,
+#export-prompts:hover {
+    background-color: var(--green);
+    transform: translateY(-2px);
+}
+
+#import-prompts:active,
+#export-prompts:active {
+    transform: translateY(1px);
+}
+
+.drag-handle {
+    width: 6px;
+    background-color: var(--comment);
+    cursor: move;
+    margin-right: 12px;
+    border-radius: 3px;
+    transition: background-color 0.3s ease;
+}
+
+.prompt-item:hover .drag-handle {
+    background-color: var(--purple);
+}
+
+.prompt-content {
+    flex-grow: 1;
+}
+
+/* Style for dragged element */
+.dragging {
+    opacity: 0.7;
+    background-color: var(--background);
+    box-shadow: 0 0 10px rgba(189, 147, 249, 0.5);
+}
