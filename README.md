@@ -65,40 +65,6 @@ Install Souffleur directly from the [Mozilla Add-ons website](https://addons.moz
    ```
    This will open Firefox with the extension loaded.
 
-### Building
-
-To build the extension:
-
-```
-npm run build
-```
-
-This will create a ZIP file in the `web-ext-artifacts` directory.
-
-### Automated Deployment
-
-This project uses GitHub Actions to automate the build and submission process to Mozilla Add-ons. When you create a new version tag (e.g., `v4.0.1`), the workflow will:
-
-1. Build the extension
-2. Lint the extension
-3. Sign the extension using Mozilla's API
-4. Upload the signed extension as an artifact
-
-To set up automated deployment:
-
-1. Get your Mozilla Add-ons API credentials:
-   - Go to https://addons.mozilla.org/en-US/developers/addon/api/key/
-   - Generate new credentials (JWT issuer and JWT secret)
-
-2. Add these credentials as GitHub repository secrets:
-   - `AMO_JWT_ISSUER`: Your JWT issuer
-   - `AMO_JWT_SECRET`: Your JWT secret
-
-3. Create a new version tag and push it:
-   ```
-   git tag v4.0.1
-   git push origin v4.0.1
-   ```
 
 ## Contributing
 
