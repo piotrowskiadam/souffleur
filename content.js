@@ -4,6 +4,7 @@ let spotlightInput; // The input field in the spotlight
 let spotlightResults; // The results container in the spotlight
 let selectedIndex = -1; // Track the selected suggestion
 let isSpotlightVisible = false; // Flag indicating whether the spotlight is visible
+let previousActiveElement = null; // Store the element that had focus before opening the spotlight
 
 // Retrieve prompts from memory
 browser.storage.local.get("prompts").then((result) => {
@@ -79,6 +80,9 @@ function setupSpotlightEventListeners() {
 
 // Show the spotlight overlay
 function showSpotlight() {
+  // Save the currently focused element before showing the spotlight
+  previousActiveElement = document.activeElement;
+  
   spotlightOverlay.style.display = "flex";
   spotlightInput.value = "";
   
@@ -106,6 +110,18 @@ function hideSpotlight() {
   spotlightOverlay.style.display = "none";
   isSpotlightVisible = false;
   selectedIndex = -1;
+  
+  // Restore focus to the element that had focus before opening the spotlight
+  if (previousActiveElement && typeof previousActiveElement.focus === 'function') {
+    // Small delay to ensure the spotlight is fully hidden before restoring focus
+    setTimeout(() => {
+      try {
+        previousActiveElement.focus();
+      } catch (e) {
+        console.error("Error restoring focus:", e);
+      }
+    }, 10);
+  }
 }
 
 // Toggle the spotlight visibility
