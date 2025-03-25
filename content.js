@@ -245,13 +245,19 @@ function selectCurrentPrompt() {
 function selectPrompt(text) {
   copyToClipboard(text);
   
+  // Hide the spotlight overlay immediately but keep the background
+  const spotlightContainer = spotlightOverlay.querySelector('.spotlight-container');
+  if (spotlightContainer) {
+    spotlightContainer.style.display = 'none';
+  }
+  
   // Show a "Copied!" message
   const copiedMessage = document.createElement("div");
   copiedMessage.className = "copied-message";
   copiedMessage.textContent = "Copied to clipboard!";
   spotlightOverlay.appendChild(copiedMessage);
   
-  // Remove the message after a delay
+  // Remove the message and fully hide the overlay after a delay
   setTimeout(() => {
     spotlightOverlay.removeChild(copiedMessage);
     hideSpotlight();
