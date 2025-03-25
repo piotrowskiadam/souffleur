@@ -1,10 +1,11 @@
-# Souffleur Add-on Documentation (v4.0)
+# Souffleur Add-on Documentation (v4.5)
 
 ## Table of Contents
 
-- [Souffleur Add-on Documentation (v4.0)](#souffleur-add-on-documentation-v40)
+- [Souffleur Add-on Documentation (v4.5)](#souffleur-add-on-documentation-v45)
   - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
+  - [What's New in v4.5](#whats-new-in-v45)
   - [What's New in v4.0](#whats-new-in-v40)
   - [Design and Styling](#design-and-styling)
   - [File Structure](#file-structure)
@@ -36,9 +37,17 @@ Key Features:
 - Import and export functionality for prompts
 - Works on any website (chatbot agnostic)
 
+## What's New in v4.5
+
+Version 4.5 introduces important usability improvements:
+
+1. **Improved Spotlight Behavior**: The spotlight overlay now disappears immediately after selecting a prompt, while still showing the "Copied to clipboard!" message
+2. **Enhanced Focus Management**: Focus now automatically returns to the previously active element after closing the spotlight overlay
+3. **Smoother User Experience**: Overall improved transitions between states for a more polished feel
+
 ## What's New in v4.0
 
-Version 4.0 introduces several major changes:
+Version 4.0 introduced several major changes:
 
 1. **MacOS Spotlight-like Interface**: Replaced the input field autocomplete with a spotlight-style overlay in the middle of the viewport, activated with Alt+P
 2. **Chatbot Agnostic**: Now works on any website, not just specific LLM platforms
@@ -239,14 +248,20 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 Q: How do I access my prompts?
 A: Press Alt+P to open the spotlight overlay, then search for and select a prompt.
 
-Q: How are prompts stored?  
+Q: How are prompts stored?
 A: Prompts are stored using `browser.storage.local`, ensuring persistence across browser sessions.
 
-Q: Can I use Souffleur on any website?  
-A: Yes, Souffleur v4.0 works on any website, not just specific LLM platforms.
+Q: Can I use Souffleur on any website?
+A: Yes, Souffleur works on any website, not just specific LLM platforms.
 
-Q: How do I customize the keyboard shortcuts?  
+Q: What happens after I select a prompt?
+A: The prompt is copied to your clipboard, the spotlight overlay disappears immediately, and focus returns to where you were before opening the spotlight. A "Copied to clipboard!" message appears briefly to confirm the action.
+
+Q: Will I lose my focus when using the spotlight?
+A: No, in v4.5 and later, your focus automatically returns to where it was before opening the spotlight overlay.
+
+Q: How do I customize the keyboard shortcuts?
 A: Currently, keyboard shortcuts are fixed, but customization will be added in a future update.
 
-Q: How can I contribute to the project?  
+Q: How can I contribute to the project?
 A: Check our GitHub repository for contribution guidelines and open issues.

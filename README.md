@@ -1,4 +1,4 @@
-# Souffleur
+# Souffleur (v4.5)
 
 ![Souffleur Logo](icons/icon128.png)
 
@@ -11,6 +11,7 @@ A Firefox extension for managing and quickly accessing prompts for Large Languag
 - **Clipboard Integration**: Selected prompts are copied to clipboard instead of being inserted into input fields
 - **Prompt Management**: Add, edit, delete, and reorder prompts through the sidebar
 - **Import/Export**: Import and export your prompts as JSON files
+- **Improved UX (v4.5)**: Spotlight overlay disappears immediately after selecting a prompt, and focus returns to where it was before
 
 ## Installation
 
