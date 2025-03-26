@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*' # Run workflow on version tags, e.g. v1.0, v20.15.10
+  workflow_dispatch: # Allow manual triggering
 
 jobs:
   build:
@@ -26,6 +27,6 @@ jobs:
         
       - name: Sign and submit to Mozilla Add-ons
         run: |
-          web-ext sign --api-key=${{ secrets.AMO_JWT_ISSUER }} --api-secret=${{ secrets.AMO_JWT_SECRET }}
+          web-ext sign --api-key=${{ secrets.AMO_JWT_ISSUER }} --api-secret=${{ secrets.AMO_JWT_SECRET }} --channel=listed
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
