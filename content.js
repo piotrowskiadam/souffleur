@@ -14,32 +14,32 @@ function createSpotlightOverlay() {
   spotlightOverlay = document.createElement("div");
   spotlightOverlay.id = "souffleur-spotlight";
   spotlightOverlay.className = "souffleur-spotlight";
-  
+
   // Create the spotlight container
   const spotlightContainer = document.createElement("div");
   spotlightContainer.className = "spotlight-container";
-  
+
   // Create the input field
   spotlightInput = document.createElement("input");
   spotlightInput.type = "text";
   spotlightInput.className = "spotlight-input";
   spotlightInput.placeholder = "Search prompts...";
-  
+
   // Create the results container
   spotlightResults = document.createElement("div");
   spotlightResults.className = "spotlight-results";
-  
+
   // Assemble the components
   spotlightContainer.appendChild(spotlightInput);
   spotlightContainer.appendChild(spotlightResults);
   spotlightOverlay.appendChild(spotlightContainer);
-  
+
   // Add to the document
   document.body.appendChild(spotlightOverlay);
-  
+
   // Hide by default
   hideSpotlight();
-  
+
   // Add event listeners
   setupSpotlightEventListeners();
 }
@@ -50,7 +50,7 @@ function setupSpotlightEventListeners() {
   spotlightInput.addEventListener("input", () => {
     filterPrompts(spotlightInput.value);
   });
-  
+
   // Keyboard navigation
   spotlightInput.addEventListener("keydown", (event) => {
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -63,7 +63,7 @@ function setupSpotlightEventListeners() {
       hideSpotlight();
     }
   });
-  
+
   // Click outside to close - use mousedown instead of click to prevent immediate closing
   spotlightOverlay.addEventListener("mousedown", (event) => {
     if (event.target === spotlightOverlay) {
@@ -85,15 +85,15 @@ function showSpotlight() {
   if (spotlightContainer) {
     spotlightContainer.style.display = 'flex'; // Or 'block' if that's the intended display
   }
-  
+
   spotlightOverlay.style.display = "flex";
   spotlightInput.value = "";
-  
+
   // Delay focus to ensure the overlay is fully visible
   setTimeout(() => {
     spotlightInput.focus();
   }, 50);
-  
+
   isSpotlightVisible = true;
 
   // Fetch prompts from background script and then filter/render
@@ -126,10 +126,13 @@ function showSpotlight() {
 
 // Hide the spotlight overlay
 function hideSpotlight() {
+  // Ensure overlay exists before trying to hide
+  if (!spotlightOverlay) return; 
+  
   spotlightOverlay.style.display = "none";
   isSpotlightVisible = false;
   selectedIndex = -1;
-  
+
   // Restore focus to the element that had focus before opening the spotlight
   if (previousActiveElement && typeof previousActiveElement.focus === 'function') {
     // Small delay to ensure the spotlight is fully hidden before restoring focus
@@ -145,17 +148,17 @@ function hideSpotlight() {
 
 // Toggle the spotlight visibility
 function toggleSpotlight() {
-  console.log("Toggle spotlight called, current visibility:", isSpotlightVisible);
+  console.log("CONTENT: Toggle spotlight called, current visibility:", isSpotlightVisible); // Added log
   
   if (isSpotlightVisible) {
     hideSpotlight();
   } else {
     // Ensure the overlay exists before showing it
     if (!spotlightOverlay || !document.body.contains(spotlightOverlay)) {
-      console.log("Recreating spotlight overlay");
+      console.log("CONTENT: Recreating spotlight overlay"); // Added log
       createSpotlightOverlay();
     }
-    
+
     // Show with a slight delay to ensure DOM is ready
     setTimeout(() => {
       showSpotlight();
@@ -166,7 +169,7 @@ function toggleSpotlight() {
 // Filter prompts based on input
 function filterPrompts(query) {
   let filteredPrompts;
-  
+
   if (!query) {
     // Show all prompts if no query
     filteredPrompts = promptList;
@@ -174,19 +177,22 @@ function filterPrompts(query) {
     // Filter prompts based on the query
     const searchQuery = query.toLowerCase();
     filteredPrompts = promptList.filter((p) =>
-      p.title.toLowerCase().includes(searchQuery) || 
+      p.title.toLowerCase().includes(searchQuery) ||
       p.text.toLowerCase().includes(searchQuery)
     );
   }
-  
+
   renderResults(filteredPrompts);
 }
 
 // Render the filtered prompts in the results container
 function renderResults(prompts) {
+   // Ensure results container exists
+  if (!spotlightResults) return; 
+
   spotlightResults.innerHTML = "";
   selectedIndex = -1;
-  
+
   if (prompts.length === 0) {
     const noResults = document.createElement("div");
     noResults.className = "no-results";
@@ -194,32 +200,32 @@ function renderResults(prompts) {
     spotlightResults.appendChild(noResults);
     return;
   }
-  
+
   prompts.forEach((prompt, index) => {
     const resultItem = document.createElement("div");
     resultItem.className = "result-item";
     resultItem.setAttribute("data-index", index);
     resultItem.setAttribute("data-text", prompt.text);
-    
+
     const title = document.createElement("div");
     title.className = "result-title";
     title.textContent = prompt.title;
-    
+
     const preview = document.createElement("div");
     preview.className = "result-preview";
     preview.textContent = truncateText(prompt.text, 100);
-    
+
     resultItem.appendChild(title);
     resultItem.appendChild(preview);
-    
+
     resultItem.addEventListener("click", () => {
       selectPrompt(prompt.text);
     });
-    
+
     resultItem.addEventListener("mouseover", () => {
       selectResultItem(index);
     });
-    
+
     spotlightResults.appendChild(resultItem);
   });
 }
@@ -234,21 +240,22 @@ function truncateText(text, maxLength = 100) {
 
 // Navigate through results with keyboard
 function navigateResults(direction) {
+  if (!spotlightResults) return; // Ensure container exists
   const items = spotlightResults.querySelectorAll(".result-item");
   if (items.length === 0) return;
-  
+
   // Remove selection from current item
   if (selectedIndex >= 0 && selectedIndex < items.length) {
     items[selectedIndex].classList.remove("selected");
   }
-  
+
   // Update selected index
   if (direction === "ArrowDown") {
     selectedIndex = (selectedIndex + 1) % items.length;
   } else if (direction === "ArrowUp") {
     selectedIndex = (selectedIndex - 1 + items.length) % items.length;
   }
-  
+
   // Add selection to new item
   items[selectedIndex].classList.add("selected");
   items[selectedIndex].scrollIntoView({ block: "nearest" });
@@ -256,12 +263,13 @@ function navigateResults(direction) {
 
 // Select a result item by index
 function selectResultItem(index) {
+  if (!spotlightResults) return; // Ensure container exists
   const items = spotlightResults.querySelectorAll(".result-item");
-  if (items.length === 0) return;
-  
+  if (items.length === 0 || index < 0 || index >= items.length) return; // Check index bounds
+
   // Remove selection from all items
   items.forEach(item => item.classList.remove("selected"));
-  
+
   // Update selected index and add selection
   selectedIndex = index;
   items[selectedIndex].classList.add("selected");
@@ -269,6 +277,7 @@ function selectResultItem(index) {
 
 // Select the current prompt (on Enter key)
 function selectCurrentPrompt() {
+  if (!spotlightResults) return; // Ensure container exists
   const items = spotlightResults.querySelectorAll(".result-item");
   if (selectedIndex >= 0 && selectedIndex < items.length) {
     const text = items[selectedIndex].getAttribute("data-text");
@@ -279,17 +288,17 @@ function selectCurrentPrompt() {
 // Select a prompt and copy to clipboard
 function selectPrompt(text) {
   copyToClipboard(text);
-  
+
   // Hide the spotlight immediately after copying
   hideSpotlight();
-  
+
   // Show a temporary "Copied!" message on the main page body
   const copiedMessage = document.createElement("div");
   copiedMessage.className = "copied-message"; // Use existing style
   copiedMessage.textContent = "Prompt Copied!"; // Changed text slightly for clarity
   copiedMessage.style.zIndex = "2147483647"; // Ensure it's on top
   document.body.appendChild(copiedMessage);
-  
+
   // Remove the message after a delay (e.g., 2000ms)
   setTimeout(() => {
     if (document.body.contains(copiedMessage)) {
@@ -307,17 +316,19 @@ function copyToClipboard(text) {
         console.log("Text copied to clipboard");
       })
       .catch(err => {
-        console.error("Failed to copy text: ", err);
-        // Fallback to background script method
-        fallbackCopyToClipboard(text);
+        console.error("Failed to copy text using navigator.clipboard: ", err);
+        // Fallback to background script method (if needed, but less likely now)
+        // fallbackCopyToClipboard(text); 
       });
   } else {
+     console.warn("Clipboard API not available. Consider adding fallback if necessary.");
     // Fallback for browsers that don't support Clipboard API
-    fallbackCopyToClipboard(text);
+    // fallbackCopyToClipboard(text);
   }
 }
 
-// Fallback method using background script
+// Fallback method using background script (REMOVED - Incompatible with MV3 Service Worker DOM access)
+/*
 function fallbackCopyToClipboard(text) {
   chrome.runtime.sendMessage({ // Use chrome.runtime
     action: "copyToClipboard",
@@ -330,6 +341,7 @@ function fallbackCopyToClipboard(text) {
     }
   });
 }
+*/
 
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Use chrome.runtime
@@ -341,7 +353,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Use
       toggleSpotlight();
     }, 10);
   }
-  return Promise.resolve({ success: true });
+  // It's good practice to return true if you might send an async response,
+  // but in this case, we don't, so returning false or undefined is fine.
+  // return true; 
 });
 
 // Add styles
@@ -389,6 +403,7 @@ function addStyles() {
       font-size: 18px;
       outline: none;
       border-bottom: 1px solid #44475A;
+      box-sizing: border-box; /* Added for consistency */
     }
     
     .spotlight-input::placeholder {
@@ -441,6 +456,7 @@ function addStyles() {
       border-radius: 4px;
       font-weight: bold;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      z-index: 2147483647; /* Ensure it's on top */
     }
   `;
   document.head.appendChild(style);
@@ -460,22 +476,25 @@ function initialize() {
   }
   
   // Add keyboard shortcut listener (as a fallback)
+  // Note: This might conflict with the command listener in some cases.
+  // Consider removing if the command listener works reliably.
   document.addEventListener("keydown", (event) => {
     // Alt+P shortcut (as a fallback if the browser command doesn't work)
     if (event.altKey && event.code === "KeyP") {
+      console.log("CONTENT: Alt+P fallback listener triggered."); // Added log
       event.preventDefault();
       event.stopPropagation();
       toggleSpotlight();
     }
-  }, true);
+  }, true); // Use capture phase
   
   // Log that initialization is complete
-  console.log("Souffleur spotlight initialized");
+  console.log("Souffleur content script initialized");
 }
 
-// Initialize when the page is fully loaded
-if (document.readyState === "complete") {
+// Initialize when the page is fully loaded or interactively ready
+if (document.readyState === "complete" || document.readyState === "interactive") {
   initialize();
 } else {
-  window.addEventListener("load", initialize);
+  window.addEventListener("DOMContentLoaded", initialize); // Use DOMContentLoaded for faster init
 }
