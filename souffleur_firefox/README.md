@@ -37,7 +37,7 @@ Install Souffleur directly from the [Mozilla Add-ons website](https://addons.moz
 
 ## Keyboard Shortcuts
 
-- `Ctrl+Shift+L`: Toggle the Sidebar
+- `Ctrl+Alt+P`: Toggle the Sidebar
 - `Alt+P`: Open the spotlight overlay
 
 *(You can customize these shortcuts by navigating to `about:addons`, clicking the gear icon ⚙️, and selecting "Manage Extension Shortcuts".)*
