@@ -28,7 +28,8 @@ body {
     padding: 16px;
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    /* height: 100vh; Removed to allow body height to adapt */
+    min-height: calc(100vh - 32px); /* Ensure it takes at least viewport height minus padding */
     background-color: var(--background);
     color: var(--foreground);
 }
