@@ -350,10 +350,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Use
   console.log("CONTENT: Message received:", request); // Added log
   if (request.action === "toggleSpotlight") {
     console.log("CONTENT: Handling toggleSpotlight message."); // Added log
-    // Prevent any ongoing events from interfering
+    // Prevent any ongoing events from interfering - Increase delay slightly
     setTimeout(() => {
       toggleSpotlight();
-    }, 10);
+    }, 100); // Increased delay from 10ms to 100ms
   }
   // It's good practice to return true if you might send an async response,
   // but in this case, we don't, so returning false or undefined is fine.
