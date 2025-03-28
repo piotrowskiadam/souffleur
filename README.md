@@ -6,7 +6,17 @@ This repository contains the source code for the Souffleur browser extension, de
 
 <a href="https://addons.mozilla.org/en-US/firefox/addon/souffleur/"><img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" alt="Get the Add-on for Firefox" width="250"></a>
 
-## Versions
+## ✨ Features
+
+- **MacOS Spotlight-like Interface**: Press `Alt+Shift+P` (Chrome) or `Alt+P` (Firefox) to open a spotlight-style overlay.
+- **Chatbot Agnostic**: Works on any website.
+- **Clipboard Integration**: Selected prompts are copied directly to your clipboard.
+- **Prompt Management**: Add, edit, delete, and reorder prompts through the Sidebar (Firefox) or Side Panel (Chrome).
+- **Import/Export**: Easily import and export your prompts as JSON files.
+- **Improved UX**: Spotlight overlay closes instantly upon prompt selection, with a brief "Prompt Copied!" feedback message shown. Focus returns to the previously active element.
+- **Manifest V3**: Updated core using Manifest V3.
+
+## 📦 Versions
 
 Due to differences in Manifest V3 implementation between browsers (specifically regarding background scripts and side panel APIs), the code is maintained in separate directories:
 
