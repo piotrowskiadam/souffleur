@@ -1,5 +1,7 @@
 # Souffleur Browser Extension
 
+![Souffleur Logo](souffleur_chrome/icons/icon128.png)
+
 This repository contains the source code for the Souffleur browser extension, designed for managing and quickly accessing prompts for Large Language Models.
 
 ## Versions

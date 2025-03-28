@@ -1,4 +1,4 @@
-# Souffleur (v4.7.0)
+# Souffleur
 
 ![Souffleur Logo](icons/icon128.png)
 
