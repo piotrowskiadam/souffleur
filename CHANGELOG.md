@@ -5,6 +5,12 @@ All notable changes to the Souffleur project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.6.0] - 2025-03-28
+
+### Fixed
+- Resolved issue where spotlight content (input and results) would not display after the first activation and prompt selection.
+- Adjusted prompt selection feedback: Spotlight now closes instantly, and a brief "Prompt Copied!" message appears independently at the bottom of the screen.
+
 ## [4.5.0] - 2025-03-26
 
 ### Fixed

@@ -82,6 +82,12 @@ function setupSpotlightEventListeners() {
 function showSpotlight() {
   // Save the currently focused element before showing the spotlight
   previousActiveElement = document.activeElement;
+
+  // Ensure the inner container is visible as well
+  const spotlightContainer = spotlightOverlay.querySelector('.spotlight-container');
+  if (spotlightContainer) {
+    spotlightContainer.style.display = 'flex'; // Or 'block' if that's the intended display
+  }
   
   spotlightOverlay.style.display = "flex";
   spotlightInput.value = "";
@@ -261,23 +267,22 @@ function selectCurrentPrompt() {
 function selectPrompt(text) {
   copyToClipboard(text);
   
-  // Hide the spotlight overlay immediately but keep the background
-  const spotlightContainer = spotlightOverlay.querySelector('.spotlight-container');
-  if (spotlightContainer) {
-    spotlightContainer.style.display = 'none';
-  }
+  // Hide the spotlight immediately after copying
+  hideSpotlight();
   
-  // Show a "Copied!" message
+  // Show a temporary "Copied!" message on the main page body
   const copiedMessage = document.createElement("div");
-  copiedMessage.className = "copied-message";
-  copiedMessage.textContent = "Copied to clipboard!";
-  spotlightOverlay.appendChild(copiedMessage);
+  copiedMessage.className = "copied-message"; // Use existing style
+  copiedMessage.textContent = "Prompt Copied!"; // Changed text slightly for clarity
+  copiedMessage.style.zIndex = "2147483647"; // Ensure it's on top
+  document.body.appendChild(copiedMessage);
   
-  // Remove the message and fully hide the overlay after a delay
+  // Remove the message after a delay (e.g., 2000ms)
   setTimeout(() => {
-    spotlightOverlay.removeChild(copiedMessage);
-    hideSpotlight();
-  }, 1500);
+    if (document.body.contains(copiedMessage)) {
+      document.body.removeChild(copiedMessage);
+    }
+  }, 2000); // Display for 2 seconds
 }
 
 // Copy text to clipboard
