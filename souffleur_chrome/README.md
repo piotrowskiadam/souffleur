@@ -6,9 +6,9 @@ A Chrome extension for managing and quickly accessing prompts for Large Language
 
 ## Features
 
-- **MacOS Spotlight-like Interface**: Press Alt+Shift+P to open a spotlight-style overlay in the middle of the viewport
-- **Chatbot Agnostic**: Works on any website, not just specific LLM platforms
-- **Clipboard Integration**: Selected prompts are copied to clipboard instead of being inserted into input fields
+- **MacOS Spotlight-like Interface**: Press `Alt+P` to open a spotlight-style overlay in the middle of the viewport.
+- **Chatbot Agnostic**: Works on any website, not just specific LLM platforms.
+- **Clipboard Integration**: Selected prompts are copied to clipboard instead of being inserted into input fields.
 - **Prompt Management**: Add, edit, delete, and reorder prompts through the Chrome Side Panel
 - **Import/Export**: Import and export your prompts as JSON files
 - **Improved UX (v4.7)**: Spotlight overlay closes instantly upon prompt selection, with a brief "Prompt Copied!" feedback message shown. Focus returns to the previously active element.
@@ -30,8 +30,8 @@ A Chrome extension for managing and quickly accessing prompts for Large Language
 
 ## How to Use
 
-1. **Add Prompts**: Open the Side Panel (click the extension icon or press Ctrl+Shift+L) and add your prompts.
-2. **Access Prompts**: Press Alt+Shift+P to open the spotlight overlay, search for a prompt, and press Enter to copy it to clipboard.
+1. **Add Prompts**: Open the Side Panel (click the extension icon or press `Alt+Shift+P`) and add your prompts.
+2. **Access Prompts**: Press `Alt+P` to open the spotlight overlay, search for a prompt, and press Enter to copy it to clipboard.
 3. **Manage Prompts**: Use the Side Panel to edit, delete, or reorder your prompts.
 4. **Import/Export**: Use the buttons at the bottom of the Side Panel to import or export your prompts as JSON.
 
