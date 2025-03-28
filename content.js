@@ -97,8 +97,10 @@ function showSpotlight() {
   isSpotlightVisible = true;
 
   // Fetch prompts from background script and then filter/render
+  console.log("CONTENT: Sending getPrompts message to background."); // Added log
   chrome.runtime.sendMessage({ action: "getPrompts" }) // Use chrome.runtime
     .then(response => {
+      console.log("CONTENT: Received response for getPrompts:", response); // Added log
       if (response && response.prompts) {
         promptList = response.prompts; // Update the local prompt list
         console.log("Prompts received in content script:", promptList);
