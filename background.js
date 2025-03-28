@@ -116,19 +116,18 @@ chrome.commands.onCommand.addListener((command, tab) => { // Use chrome.commands
   if (command === "toggle_spotlight") {
     console.log("BACKGROUND: Handling toggle_spotlight command."); // Added log
     // Send message to content script in the active tab to toggle spotlight
-    chrome.tabs.query({ active: true, currentWindow: true }).then(async (tabs) => { // Use chrome.tabs, make async
+    chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => { // Use chrome.tabs
       console.log("BACKGROUND: Found active tab:", tabs[0]?.id); // Added log
       if (tabs[0] && tabs[0].id) {
-        try {
-          console.log(`BACKGROUND: Sending toggleSpotlight to tab ${tabs[0].id}`); // Log before sending
-          await chrome.tabs.sendMessage(tabs[0].id, { action: "toggleSpotlight" }); // Use chrome.tabs, await it
-          console.log(`BACKGROUND: Successfully sent toggleSpotlight to tab ${tabs[0].id}`); // Log after sending
-          if (chrome.runtime.lastError) {
-             console.error(`BACKGROUND: Error after sending toggleSpotlight: ${chrome.runtime.lastError.message}`);
-          }
-        } catch (error) {
-           console.error("Error sending toggleSpotlight message:", error); // Catch errors during send
-        }
+        console.log(`BACKGROUND: Sending toggleSpotlight to tab ${tabs[0].id}`); // Log before sending
+        chrome.tabs.sendMessage(tabs[0].id, { action: "toggleSpotlight" }) // Use chrome.tabs
+          .then(() => {
+             console.log(`BACKGROUND: Successfully sent toggleSpotlight to tab ${tabs[0].id}`); // Log success
+             if (chrome.runtime.lastError) { // Check lastError in callback
+                console.error(`BACKGROUND: Error reported after sending toggleSpotlight: ${chrome.runtime.lastError.message}`);
+             }
+          })
+          .catch(error => console.error("Error sending toggleSpotlight message:", error)); // Catch errors during send
       } else {
         console.error("Could not find active tab to send message.");
       }
