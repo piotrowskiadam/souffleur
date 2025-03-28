@@ -154,11 +154,18 @@ function attachDragListeners() {
     // Update promptList array
     const [reorderedItem] = promptList.splice(oldIndex, 1);
     promptList.splice(newIndex, 0, reorderedItem);
+    
+    console.log("SIDEBAR: Saving reordered list:", promptList); // Added log
 
     // Save to storage and re-render
-    chrome.storage.local.set({ prompts: promptList }).then(() => { // Use chrome.storage
-      renderPrompts();
-    });
+    chrome.storage.local.set({ prompts: promptList })
+      .then(() => {
+        console.log("SIDEBAR: Reordered list saved successfully."); // Added log
+        renderPrompts();
+      })
+      .catch(error => {
+        console.error("SIDEBAR: Error saving reordered list:", error); // Added error handling
+      });
   });
 }
 
