@@ -474,20 +474,7 @@ function initialize() {
   if (!document.body.contains(spotlightOverlay)) {
     document.body.appendChild(spotlightOverlay);
   }
-  
-  // Add keyboard shortcut listener (as a fallback)
-  // Note: This might conflict with the command listener in some cases.
-  // Consider removing if the command listener works reliably.
-  document.addEventListener("keydown", (event) => {
-    // Alt+P shortcut (as a fallback if the browser command doesn't work)
-    if (event.altKey && event.code === "KeyP") {
-      console.log("CONTENT: Alt+P fallback listener triggered."); // Added log
-      event.preventDefault();
-      event.stopPropagation();
-      toggleSpotlight();
-    }
-  }, true); // Use capture phase
-  
+     
   // Log that initialization is complete
   console.log("Souffleur content script initialized");
 }
