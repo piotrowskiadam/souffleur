@@ -108,15 +108,18 @@ async function handleCommandToggle(windowId) {
 
 // --- Command Handling (Keyboard Shortcuts) ---
 chrome.commands.onCommand.addListener((command, tab) => { // Use chrome.commands
-  console.log("Command received:", command);
+  console.log(`BACKGROUND: Command received: ${command}`); // Enhanced log
   if (command === "_execute_sidebar_action") {
+    console.log("BACKGROUND: Handling _execute_sidebar_action command."); // Added log
     // Pass the windowId from the tab context to the command handler
     handleCommandToggle(tab.windowId);
   }
 
   if (command === "toggle_spotlight") {
+    console.log("BACKGROUND: Handling toggle_spotlight command."); // Added log
     // Send message to content script in the active tab to toggle spotlight
     chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => { // Use chrome.tabs
+      console.log("BACKGROUND: Found active tab:", tabs[0]?.id); // Added log
       if (tabs[0] && tabs[0].id) {
         chrome.tabs.sendMessage(tabs[0].id, { action: "toggleSpotlight" }) // Use chrome.tabs
           .catch(error => console.error("Error sending toggleSpotlight message:", error)); // Add error handling

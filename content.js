@@ -333,7 +333,9 @@ function fallbackCopyToClipboard(text) {
 
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Use chrome.runtime
+  console.log("CONTENT: Message received:", request); // Added log
   if (request.action === "toggleSpotlight") {
+    console.log("CONTENT: Handling toggleSpotlight message."); // Added log
     // Prevent any ongoing events from interfering
     setTimeout(() => {
       toggleSpotlight();
