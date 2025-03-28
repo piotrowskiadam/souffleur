@@ -27,20 +27,23 @@ browser.runtime.onInstalled.addListener((details) => {
         console.error("Error during storage initialization:", error);
       });
   }
-});
-
-// --- Setup Chrome Side Panel Behavior ---
-// This allows the toolbar icon to open the side panel directly in Chrome.
-if (typeof chrome !== 'undefined' && chrome.sidePanel) {
-  try {
-    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
-      .then(() => console.log("Set side panel behavior for action click."))
-      .catch((error) => console.error("Error setting side panel behavior:", error));
-  } catch (error) {
-     // Catch potential synchronous errors if the API structure is unexpected
-    console.error("Synchronous error setting side panel behavior:", error);
+  
+  // --- Setup Chrome Side Panel Behavior (Run on install/update) ---
+  // This allows the toolbar icon to open the side panel directly in Chrome.
+  if (typeof chrome !== 'undefined' && chrome.sidePanel) {
+    console.log("Setting up Chrome side panel behavior...");
+    try {
+      chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+        .then(() => console.log("Successfully set side panel behavior for action click."))
+        .catch((error) => console.error("Error setting side panel behavior (async):", error));
+    } catch (error) {
+       // Catch potential synchronous errors if the API structure is unexpected
+      console.error("Synchronous error setting side panel behavior:", error);
+    }
+  } else {
+     console.log("Chrome sidePanel API not detected. Skipping behavior setup.");
   }
-}
+});
 
 // --- Message Handling ---
 // Listen for messages from content scripts or popup/sidebar
