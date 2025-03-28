@@ -107,11 +107,8 @@ async function handleCommandToggle(windowId) {
 // --- Command Handling (Keyboard Shortcuts) ---
 chrome.commands.onCommand.addListener((command, tab) => { // Use chrome.commands
   console.log(`BACKGROUND: Command received: ${command}`); // Enhanced log
-  if (command === "toggle_sidebar") { // Use renamed command
-    console.log("BACKGROUND: Handling toggle_sidebar command."); // Updated log
-    // Pass the windowId from the tab context to the command handler
-    handleCommandToggle(tab.windowId);
-  }
+  // Removed handler for "toggle_sidebar" as "_execute_action" doesn't fire this event.
+  // The action is handled by chrome.sidePanel.setPanelBehavior directly.
 
   if (command === "toggle_spotlight") {
     console.log("BACKGROUND: Handling toggle_spotlight command."); // Added log
