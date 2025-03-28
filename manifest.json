@@ -14,7 +14,7 @@
     "<all_urls>"
   ],
   "background": {
-    "service_worker": "background.js"
+    "scripts": ["background.js"]
   },
   "sidebar_action": {
     "default_title": "Souffleur",
