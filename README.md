@@ -1,8 +1,8 @@
-# Souffleur (v4.5)
+# Souffleur (v4.7.0)
 
 ![Souffleur Logo](icons/icon128.png)
 
-A Firefox extension for managing and quickly accessing prompts for Large Language Models with a MacOS Spotlight-like interface.
+A Firefox extension for managing and quickly accessing prompts for Large Language Models with a MacOS Spotlight-like interface. (Now using Manifest V3).
 
 ## Features
 
@@ -11,7 +11,8 @@ A Firefox extension for managing and quickly accessing prompts for Large Languag
 - **Clipboard Integration**: Selected prompts are copied to clipboard instead of being inserted into input fields
 - **Prompt Management**: Add, edit, delete, and reorder prompts through the sidebar
 - **Import/Export**: Import and export your prompts as JSON files
-- **Improved UX (v4.5)**: Spotlight overlay disappears immediately after selecting a prompt, and focus returns to where it was before
+- **Improved UX (v4.7)**: Spotlight overlay closes instantly upon prompt selection, with a brief "Prompt Copied!" feedback message shown. Focus returns to the previously active element.
+- **Manifest V3**: Updated core for future browser compatibility (currently tested on Firefox).
 
 ## Installation
 

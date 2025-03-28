@@ -5,6 +5,15 @@ All notable changes to the Souffleur project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.7.0] - 2025-03-28
+
+### Changed
+- Migrated extension core to Manifest V3 for future compatibility, maintaining Firefox support.
+
+### Fixed
+- Resolved issue where prompts failed to load in the spotlight overlay after MV3 migration.
+- Corrected sidebar layout issue where Import/Export buttons could be cut off.
+
 ## [4.6.0] - 2025-03-28
 
 ### Fixed
