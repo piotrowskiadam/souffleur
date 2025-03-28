@@ -18,7 +18,7 @@ A Firefox extension for managing and quickly accessing prompts for Large Languag
 
 ### From Mozilla Add-ons
 
-[![Get the Add-on for Firefox](https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg)](https://addons.mozilla.org/en-US/firefox/addon/souffleur/)
+<a href="https://addons.mozilla.org/en-US/firefox/addon/souffleur/"><img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" alt="Get the Add-on for Firefox" width="250"></a>
 
 (Or install directly from the [Mozilla Add-ons website](https://addons.mozilla.org/en-US/firefox/addon/souffleur/).)
 
