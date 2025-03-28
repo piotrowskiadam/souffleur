@@ -80,13 +80,19 @@ async function handleCommandToggle(windowId) {
     }
     // Check if sidePanel is available (Chrome) - use chrome namespace explicitly
     else if (typeof chrome !== 'undefined' && chrome.sidePanel) {
-      console.log(`Opening Chrome side panel via command for window: ${windowId}`);
-      // Opening via command is a user gesture, so open() should work directly.
-      if (windowId) {
-        await chrome.sidePanel.open({ windowId });
-      } else {
-        console.warn("Command: No valid windowId provided for chrome.sidePanel.open. Opening globally.");
-        await chrome.sidePanel.open({});
+      console.log(`Attempting to open Chrome side panel via command for window: ${windowId}`);
+      try {
+        // Opening via command is a user gesture, so open() should work directly.
+        if (windowId) {
+          await chrome.sidePanel.open({ windowId });
+          console.log(`Successfully called chrome.sidePanel.open for window: ${windowId}`);
+        } else {
+          console.warn("Command: No valid windowId provided for chrome.sidePanel.open. Attempting global open.");
+          await chrome.sidePanel.open({});
+          console.log("Successfully called global chrome.sidePanel.open.");
+        }
+      } catch (openError) {
+         console.error("Error calling chrome.sidePanel.open:", openError);
       }
     } else {
       console.error("Command: Neither sidebarAction nor sidePanel API is available.");
