@@ -179,10 +179,21 @@ function attachDragListeners() {
         return;
     }
 
+    // --- Debugging Logs ---
+    console.log(`SIDEBAR: Attempting to move item FROM index ${dragStartIndex} TO index ${newIndex}`);
+    if (dragStartIndex >= 0 && dragStartIndex < promptList.length) {
+      console.log("SIDEBAR: Item to move:", JSON.stringify(promptList[dragStartIndex]));
+    } else {
+      console.error("SIDEBAR: dragStartIndex is out of bounds!");
+    }
+    // --- End Debugging Logs ---
+
     // Update promptList array using the stored dragStartIndex
-    const [reorderedItem] = promptList.splice(dragStartIndex, 1);
+    const [reorderedItem] = promptList.splice(dragStartIndex, 1); // Remove from old position
     if (reorderedItem) {
-        promptList.splice(newIndex, 0, reorderedItem);
+        console.log("SIDEBAR: Item successfully removed from old position."); // Log success
+        promptList.splice(newIndex, 0, reorderedItem); // Insert at new position
+        console.log("SIDEBAR: Item successfully inserted into new position."); // Log success
     } else {
         console.error("SIDEBAR: Failed to splice item from original position.");
         renderPrompts(); // Re-render to reset state
