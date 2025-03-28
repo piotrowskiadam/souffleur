@@ -29,6 +29,19 @@ browser.runtime.onInstalled.addListener((details) => {
   }
 });
 
+// --- Setup Chrome Side Panel Behavior ---
+// This allows the toolbar icon to open the side panel directly in Chrome.
+if (typeof chrome !== 'undefined' && chrome.sidePanel) {
+  try {
+    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+      .then(() => console.log("Set side panel behavior for action click."))
+      .catch((error) => console.error("Error setting side panel behavior:", error));
+  } catch (error) {
+     // Catch potential synchronous errors if the API structure is unexpected
+    console.error("Synchronous error setting side panel behavior:", error);
+  }
+}
+
 // --- Message Handling ---
 // Listen for messages from content scripts or popup/sidebar
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -56,72 +69,40 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true;
 });
 
-// --- Sidebar/Side Panel Toggle Function ---
-// Tries to toggle Firefox sidebar or open Chrome side panel
-async function togglePanel(tabId, windowId) { // Added tabId parameter
+// --- Command Handling Function (for Keyboard Shortcut) ---
+// Tries to toggle Firefox sidebar or open Chrome side panel via command
+async function handleCommandToggle(windowId) {
   try {
     // Check if sidebarAction is available (Firefox)
     if (typeof browser !== 'undefined' && browser.sidebarAction) {
-      console.log("Toggling Firefox sidebar.");
+      console.log("Toggling Firefox sidebar via command.");
       await browser.sidebarAction.toggle();
     }
     // Check if sidePanel is available (Chrome) - use chrome namespace explicitly
     else if (typeof chrome !== 'undefined' && chrome.sidePanel) {
-      console.log(`Attempting to open Chrome side panel for tab: ${tabId}, window: ${windowId}`);
-      if (tabId) {
-        // Ensure the panel is enabled for the specific tab first
-        await chrome.sidePanel.setOptions({
-          tabId: tabId,
-          path: 'sidebar/sidebar.html', // Make sure path is set
-          enabled: true
-        });
-        console.log(`Enabled Chrome side panel for tab: ${tabId}`);
-      } else {
-         console.warn("No valid tabId provided for chrome.sidePanel.setOptions.");
-         // Optionally, you could try to query for the active tab here as a fallback
-      }
-      
-      // Now attempt to open the panel for the window
+      console.log(`Opening Chrome side panel via command for window: ${windowId}`);
+      // Opening via command is a user gesture, so open() should work directly.
       if (windowId) {
         await chrome.sidePanel.open({ windowId });
-        console.log(`Opened Chrome side panel for window: ${windowId}`);
       } else {
-        console.warn("No valid windowId provided for chrome.sidePanel.open. Opening globally.");
-        // Fallback for contexts where windowId might not be available
+        console.warn("Command: No valid windowId provided for chrome.sidePanel.open. Opening globally.");
         await chrome.sidePanel.open({});
       }
     } else {
-      console.error("Neither sidebarAction nor sidePanel API is available.");
+      console.error("Command: Neither sidebarAction nor sidePanel API is available.");
     }
   } catch (error) {
-    console.error("Error toggling panel:", error);
+    console.error("Error handling command toggle:", error);
   }
 }
 
-// --- Action (Toolbar Icon) Click ---
-// Listen for clicks on the addon icon
-browser.action.onClicked.addListener((tab) => {
-  console.log("Action icon clicked.");
-  // Pass both tabId and windowId
-  if (tab.id) {
-    togglePanel(tab.id, tab.windowId);
-  } else {
-    console.error("Action click: Missing tab ID.");
-    togglePanel(null, tab.windowId); // Try opening for window anyway
-  }
-});
 
 // --- Command Handling (Keyboard Shortcuts) ---
 browser.commands.onCommand.addListener((command, tab) => {
   console.log("Command received:", command);
   if (command === "_execute_sidebar_action") {
-    // Pass both tabId and windowId
-    if (tab.id) {
-      togglePanel(tab.id, tab.windowId);
-    } else {
-       console.error("Command: Missing tab ID.");
-       togglePanel(null, tab.windowId); // Try opening for window anyway
-    }
+    // Pass the windowId from the tab context to the command handler
+    handleCommandToggle(tab.windowId);
   }
 
   if (command === "toggle_spotlight") {
