@@ -56,30 +56,50 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true;
 });
 
-// --- Sidebar Toggle Function ---
-function toggleSidebar() {
-  // Check if sidebarAction is available (Firefox)
-  if (browser.sidebarAction) {
-    browser.sidebarAction.toggle();
-  } else {
-    // Placeholder for potential Chrome side panel logic later
-    console.log("Sidebar action not available (maybe Chrome - side panel logic needed here).");
-    // Example: chrome.sidePanel.open({ windowId: sender.tab.windowId }); // Needs context
+// --- Sidebar/Side Panel Toggle Function ---
+// Tries to toggle Firefox sidebar or open Chrome side panel
+async function togglePanel(windowId) {
+  try {
+    // Check if sidebarAction is available (Firefox)
+    if (typeof browser !== 'undefined' && browser.sidebarAction) {
+      console.log("Toggling Firefox sidebar.");
+      await browser.sidebarAction.toggle();
+    }
+    // Check if sidePanel is available (Chrome) - use chrome namespace explicitly
+    else if (typeof chrome !== 'undefined' && chrome.sidePanel) {
+      console.log("Attempting to open Chrome side panel.");
+      // Chrome's sidePanel API focuses on opening.
+      // We'll open it in the context of the current window if possible.
+      if (windowId) {
+        await chrome.sidePanel.open({ windowId });
+        console.log("Opened Chrome side panel for window:", windowId);
+      } else {
+         // Fallback for contexts where windowId might not be available
+        await chrome.sidePanel.open({});
+        console.log("Opened Chrome side panel globally (no specific windowId).");
+      }
+    } else {
+      console.error("Neither sidebarAction nor sidePanel API is available.");
+    }
+  } catch (error) {
+    console.error("Error toggling panel:", error);
   }
 }
 
 // --- Action (Toolbar Icon) Click ---
-// Listen for clicks on the addon icon (renamed from browserAction)
+// Listen for clicks on the addon icon
 browser.action.onClicked.addListener((tab) => {
   console.log("Action icon clicked.");
-  toggleSidebar(); // Attempt to toggle sidebar/sidepanel
+  // Pass the windowId from the tab context
+  togglePanel(tab.windowId);
 });
 
 // --- Command Handling (Keyboard Shortcuts) ---
 browser.commands.onCommand.addListener((command, tab) => {
   console.log("Command received:", command);
   if (command === "_execute_sidebar_action") {
-    toggleSidebar();
+    // Pass the windowId from the tab context
+    togglePanel(tab.windowId);
   }
 
   if (command === "toggle_spotlight") {
