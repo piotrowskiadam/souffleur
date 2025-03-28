@@ -1,5 +1,7 @@
 # Souffleur Browser Extension
 
+[![Get the Add-on for Firefox](https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg)](https://addons.mozilla.org/en-US/firefox/addon/souffleur/)
+
 ![Souffleur Logo](souffleur_chrome/icons/icon128.png)
 
 This repository contains the source code for the Souffleur browser extension, designed for managing and quickly accessing prompts for Large Language Models.
