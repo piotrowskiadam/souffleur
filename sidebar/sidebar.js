@@ -3,7 +3,7 @@ let isAddingPrompt = false;
 
 // Load prompts from storage
 function loadPrompts() {
-  browser.storage.local.get("prompts").then((result) => {
+  chrome.storage.local.get("prompts").then((result) => { // Use chrome.storage
     promptList = result.prompts || [];
     renderPrompts();
     attachDragListeners();
@@ -70,7 +70,7 @@ function attachPromptListeners() {
     btn.addEventListener("click", (e) => {
       const index = e.target.getAttribute("data-index");
       const prompt = promptList[index];
-      
+
       // Create edit form
       const editForm = document.createElement("div");
       editForm.className = "edit-form";
@@ -82,27 +82,27 @@ function attachPromptListeners() {
           <button class="cancel-btn">Cancel</button>
         </div>
       `;
-      
+
       // Replace prompt content with edit form
       const promptElement = e.target.closest(".prompt-item");
       const promptContent = promptElement.querySelector(".prompt-content");
       promptContent.style.display = "none";
       promptElement.appendChild(editForm);
-      
+
       // Add event listeners to save and cancel buttons
       const saveBtn = editForm.querySelector(".save-btn");
       const cancelBtn = editForm.querySelector(".cancel-btn");
-      
+
       saveBtn.addEventListener("click", () => {
         const newTitle = editForm.querySelector(".edit-title").value;
         const newText = editForm.querySelector(".edit-text").value;
-        
+
         promptList[index] = { title: newTitle, text: newText };
-        browser.storage.local.set({ prompts: promptList }).then(() => {
+        chrome.storage.local.set({ prompts: promptList }).then(() => { // Use chrome.storage
           renderPrompts();
         });
       });
-      
+
       cancelBtn.addEventListener("click", () => {
         promptElement.removeChild(editForm);
         promptContent.style.display = "block";
@@ -114,7 +114,7 @@ function attachPromptListeners() {
     btn.addEventListener("click", (e) => {
       const index = e.target.getAttribute("data-index");
       promptList.splice(index, 1);
-      browser.storage.local.set({ prompts: promptList }).then(() => {
+      chrome.storage.local.set({ prompts: promptList }).then(() => { // Use chrome.storage
         renderPrompts();
       });
     });
@@ -156,7 +156,7 @@ function attachDragListeners() {
     promptList.splice(newIndex, 0, reorderedItem);
 
     // Save to storage and re-render
-    browser.storage.local.set({ prompts: promptList }).then(() => {
+    chrome.storage.local.set({ prompts: promptList }).then(() => { // Use chrome.storage
       renderPrompts();
     });
   });
@@ -196,7 +196,7 @@ document.getElementById("add-prompt-btn").addEventListener("click", () => {
     const text = document.getElementById("new-prompt-text").value;
     if (title && text) {
       promptList.unshift({ title, text });
-      browser.storage.local.set({ prompts: promptList }).then(() => {
+      chrome.storage.local.set({ prompts: promptList }).then(() => { // Use chrome.storage
         renderPrompts();
         addPromptForm.style.display = "none";
         addPromptBtn.textContent = "Add Prompt";
@@ -221,7 +221,7 @@ document.getElementById("import-file").addEventListener("change", (event) => {
       try {
         const importedPrompts = JSON.parse(e.target.result);
         promptList = importedPrompts;
-        browser.storage.local.set({ prompts: promptList }).then(() => {
+        chrome.storage.local.set({ prompts: promptList }).then(() => { // Use chrome.storage
           renderPrompts();
           alert("Prompts imported successfully!");
         });

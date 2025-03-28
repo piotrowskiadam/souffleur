@@ -97,7 +97,7 @@ function showSpotlight() {
   isSpotlightVisible = true;
 
   // Fetch prompts from background script and then filter/render
-  browser.runtime.sendMessage({ action: "getPrompts" })
+  chrome.runtime.sendMessage({ action: "getPrompts" }) // Use chrome.runtime
     .then(response => {
       if (response && response.prompts) {
         promptList = response.prompts; // Update the local prompt list
@@ -319,7 +319,7 @@ function copyToClipboard(text) {
 
 // Fallback method using background script
 function fallbackCopyToClipboard(text) {
-  browser.runtime.sendMessage({
+  chrome.runtime.sendMessage({ // Use chrome.runtime
     action: "copyToClipboard",
     text: text
   }).then(response => {
@@ -332,7 +332,7 @@ function fallbackCopyToClipboard(text) {
 }
 
 // Listen for messages from the background script
-browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Use chrome.runtime
   if (request.action === "toggleSpotlight") {
     // Prevent any ongoing events from interfering
     setTimeout(() => {
