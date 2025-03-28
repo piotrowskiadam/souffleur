@@ -1,0 +1,33 @@
+{
+  "name": "souffleur",
+  "version": "4.0.0",
+  "description": "A Firefox extension for managing and quickly accessing prompts for Large Language Models",
+  "main": "background.js",
+  "scripts": {
+    "build": "zip -r souffleur.zip * -x \"*.git*\" -x \"package.json\" -x \"package-lock.json\" -x \"node_modules/*\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/piotrowskiadam/souffleur.git"
+  },
+  "keywords": [
+    "firefox",
+    "addon",
+    "extension",
+    "llm",
+    "prompts",
+    "chatgpt",
+    "claude",
+    "gemini"
+  ],
+  "author": "Adam Piotrowski",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/piotrowskiadam/souffleur/issues"
+  },
+  "homepage": "https://github.com/piotrowskiadam/souffleur#readme",
+  "devDependencies": {
+    "web-ext": "^8.5.0"
+  }
+}

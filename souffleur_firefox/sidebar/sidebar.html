@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Souffleur Prompts</title>
+    <link rel="stylesheet" href="sidebar.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="dracula-theme">
+    <div class="header">
+      <h1>Souffleur</h1>
+      <p class="subtitle">Press Alt+P to open prompt spotlight</p>
+    </div>
+    
+    <div id="add-prompt-container">
+      <button id="add-prompt-btn">Add Prompt</button>
+      <div id="add-prompt-form" style="display: none">
+        <input type="text" id="new-prompt-title" placeholder="Prompt Title" />
+        <textarea
+          id="new-prompt-text"
+          placeholder="Enter your prompt here"
+        ></textarea>
+      </div>
+    </div>
+
+    <div id="prompt-list">
+      <!-- Prompts will be dynamically inserted here -->
+    </div>
+
+    <div id="import-export-buttons">
+      <button id="import-prompts">Import Prompts</button>
+      <button id="export-prompts">Export Prompts</button>
+      <input
+        type="file"
+        id="import-file"
+        accept=".json"
+        style="display: none"
+      />
+    </div>
+
+    <script src="sidebar.js"></script>
+  </body>
+</html>
