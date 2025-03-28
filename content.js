@@ -6,10 +6,7 @@ let selectedIndex = -1; // Track the selected suggestion
 let isSpotlightVisible = false; // Flag indicating whether the spotlight is visible
 let previousActiveElement = null; // Store the element that had focus before opening the spotlight
 
-// Retrieve prompts from memory
-browser.storage.local.get("prompts").then((result) => {
-  promptList = result.prompts || [];
-});
+// Prompts will be fetched from the background script when the spotlight is shown.
 
 // Create the spotlight overlay
 function createSpotlightOverlay() {
@@ -98,10 +95,26 @@ function showSpotlight() {
   }, 50);
   
   isSpotlightVisible = true;
-  
-  // Show all prompts initially
-  filterPrompts("");
-  
+
+  // Fetch prompts from background script and then filter/render
+  browser.runtime.sendMessage({ action: "getPrompts" })
+    .then(response => {
+      if (response && response.prompts) {
+        promptList = response.prompts; // Update the local prompt list
+        console.log("Prompts received in content script:", promptList);
+        filterPrompts(""); // Show all received prompts initially
+      } else {
+        console.error("Failed to get prompts from background or invalid response:", response);
+        promptList = []; // Clear list on error
+        filterPrompts(""); // Render empty state
+      }
+    })
+    .catch(error => {
+      console.error("Error sending message to get prompts:", error);
+      promptList = []; // Clear list on error
+      filterPrompts(""); // Render empty state
+    });
+
   // Prevent the overlay from closing immediately
   spotlightOverlay.addEventListener("mousedown", (event) => {
     if (event.target === spotlightOverlay) {
