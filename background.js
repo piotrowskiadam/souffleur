@@ -109,8 +109,8 @@ async function handleCommandToggle(windowId) {
 // --- Command Handling (Keyboard Shortcuts) ---
 chrome.commands.onCommand.addListener((command, tab) => { // Use chrome.commands
   console.log(`BACKGROUND: Command received: ${command}`); // Enhanced log
-  if (command === "_execute_sidebar_action") {
-    console.log("BACKGROUND: Handling _execute_sidebar_action command."); // Added log
+  if (command === "toggle_sidebar") { // Use renamed command
+    console.log("BACKGROUND: Handling toggle_sidebar command."); // Updated log
     // Pass the windowId from the tab context to the command handler
     handleCommandToggle(tab.windowId);
   }

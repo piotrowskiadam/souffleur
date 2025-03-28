@@ -46,7 +46,7 @@
     }
   ],
   "commands": {
-    "_execute_sidebar_action": {
+    "toggle_sidebar": {
       "suggested_key": {
         "default": "Ctrl+Shift+L"
       },
