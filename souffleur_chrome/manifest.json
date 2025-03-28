@@ -48,13 +48,13 @@
   "commands": {
     "toggle_sidebar": {
       "suggested_key": {
-        "default": "Ctrl+Shift+L"
+        "default": "Alt+Shift+P"
       },
       "description": "Toggle Souffleur Side Panel"
     },
     "toggle_spotlight": {
       "suggested_key": {
-        "default": "Alt+Shift+P"
+        "default": "Alt+P"
       },
       "description": "Toggle Souffleur spotlight"
     }

@@ -37,8 +37,8 @@ A Chrome extension for managing and quickly accessing prompts for Large Language
 
 ## Keyboard Shortcuts
 
-- `Ctrl+Shift+L`: Toggle the Side Panel
-- `Alt+Shift+P`: Open the spotlight overlay
+- `Alt+Shift+P`: Toggle the Side Panel
+- `Alt+P`: Open the spotlight overlay
 
 *(You can customize these shortcuts by navigating to `chrome://extensions/shortcuts` in your browser.)*
 
