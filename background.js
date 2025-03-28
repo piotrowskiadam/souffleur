@@ -1,12 +1,12 @@
 console.log("Service Worker starting...");
 
 // --- Initialization on Install ---
-browser.runtime.onInstalled.addListener((details) => {
+chrome.runtime.onInstalled.addListener((details) => { // Use chrome.runtime
   console.log("Extension installed or updated:", details.reason);
   if (details.reason === "install") {
     console.log("Performing first-time initialization...");
     // Initialize prompts in storage if not already present
-    browser.storage.local.get("prompts")
+    chrome.storage.local.get("prompts") // Use chrome.storage
       .then((result) => {
         console.log("Checking for existing prompts in storage");
         if (!result.prompts) {
@@ -15,7 +15,7 @@ browser.runtime.onInstalled.addListener((details) => {
             { id: "1", title: "Greeting", text: "Hello, how are you?" },
             { id: "2", title: "Task Request", text: "Can you help me with a task?" },
           ];
-          return browser.storage.local.set({ prompts: initialPrompts });
+          return chrome.storage.local.set({ prompts: initialPrompts }); // Use chrome.storage
         } else {
           console.log("Existing prompts found in storage");
         }
@@ -27,7 +27,7 @@ browser.runtime.onInstalled.addListener((details) => {
         console.error("Error during storage initialization:", error);
       });
   }
-  
+
   // --- Setup Chrome Side Panel Behavior (Run on install/update) ---
   // This allows the toolbar icon to open the side panel directly in Chrome.
   if (typeof chrome !== 'undefined' && chrome.sidePanel) {
@@ -47,12 +47,12 @@ browser.runtime.onInstalled.addListener((details) => {
 
 // --- Message Handling ---
 // Listen for messages from content scripts or popup/sidebar
-browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Use chrome.runtime
   console.log("Message received in service worker:", request);
 
   if (request.action === "getPrompts") {
     // Retrieve prompts from storage and send them back
-    return browser.storage.local.get("prompts")
+    return chrome.storage.local.get("prompts") // Use chrome.storage
       .then((result) => {
         console.log("Sending prompts:", result.prompts);
         return { prompts: result.prompts || [] };
@@ -76,7 +76,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Tries to toggle Firefox sidebar or open Chrome side panel via command
 async function handleCommandToggle(windowId) {
   try {
-    // Check if sidebarAction is available (Firefox)
+    // Check if sidebarAction is available (Firefox) - Keep browser check for Firefox specific API
     if (typeof browser !== 'undefined' && browser.sidebarAction) {
       console.log("Toggling Firefox sidebar via command.");
       await browser.sidebarAction.toggle();
@@ -107,7 +107,7 @@ async function handleCommandToggle(windowId) {
 
 
 // --- Command Handling (Keyboard Shortcuts) ---
-browser.commands.onCommand.addListener((command, tab) => {
+chrome.commands.onCommand.addListener((command, tab) => { // Use chrome.commands
   console.log("Command received:", command);
   if (command === "_execute_sidebar_action") {
     // Pass the windowId from the tab context to the command handler
@@ -116,9 +116,9 @@ browser.commands.onCommand.addListener((command, tab) => {
 
   if (command === "toggle_spotlight") {
     // Send message to content script in the active tab to toggle spotlight
-    browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+    chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => { // Use chrome.tabs
       if (tabs[0] && tabs[0].id) {
-        browser.tabs.sendMessage(tabs[0].id, { action: "toggleSpotlight" })
+        chrome.tabs.sendMessage(tabs[0].id, { action: "toggleSpotlight" }) // Use chrome.tabs
           .catch(error => console.error("Error sending toggleSpotlight message:", error)); // Add error handling
       } else {
         console.error("Could not find active tab to send message.");
