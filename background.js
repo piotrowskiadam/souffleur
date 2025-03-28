@@ -51,26 +51,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Use
   console.log("Message received in service worker:", request);
 
   if (request.action === "getPrompts") {
-    // Retrieve prompts from storage and send them back
-    return chrome.storage.local.get("prompts") // Use chrome.storage
+    console.log("Handling getPrompts request...");
+    chrome.storage.local.get("prompts") // Use chrome.storage
       .then((result) => {
-        console.log("Sending prompts:", result.prompts);
-        return { prompts: result.prompts || [] };
+        console.log("Successfully retrieved prompts from storage:", result.prompts);
+        sendResponse({ prompts: result.prompts || [] }); // Use sendResponse callback
       })
       .catch((error) => {
         console.error("Error retrieving prompts:", error);
-        // It's important to return a structured error or empty data
-        return { prompts: [], error: error.message };
+        sendResponse({ prompts: [], error: error.message }); // Use sendResponse callback on error
       });
+    return true; // Return true *only* for async responses (getPrompts)
   }
 
-  // Note: The DOM-based copyToClipboard fallback has been removed as it's incompatible with Service Workers.
-  // The content script should handle copying using navigator.clipboard.
+  // Handle other potential message types here if needed
 
-  // Return true to indicate you wish to send a response asynchronously
-  // This is important for listeners returning promises.
-  return true;
+  // If no async response is needed, return false or undefined implicitly
 });
+
 
 // --- Command Handling Function (for Keyboard Shortcut) ---
 // Tries to toggle Firefox sidebar or open Chrome side panel via command
