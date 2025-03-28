@@ -123,49 +123,90 @@ function attachPromptListeners() {
 
 // Attach drag listeners
 function attachDragListeners() {
-  const promptList = document.getElementById("prompt-list");
+  const listElement = document.getElementById("prompt-list"); // Renamed for clarity
   let draggedItem = null;
+  let dragStartIndex = -1; // Variable to store the starting index
 
-  promptList.addEventListener("dragstart", (e) => {
+  listElement.addEventListener("dragstart", (e) => {
     draggedItem = e.target.closest(".prompt-item");
-    setTimeout(() => draggedItem.classList.add("dragging"), 0);
+    // Store the original index when drag starts
+    dragStartIndex = parseInt(draggedItem.dataset.index);
+    console.log(`SIDEBAR: Drag Start - Index: ${dragStartIndex}`); // Log start index
+    // Use setTimeout to allow the browser to render the drag image before adding class
+    setTimeout(() => {
+        if (draggedItem) draggedItem.classList.add("dragging");
+    }, 0);
   });
 
-  promptList.addEventListener("dragend", (e) => {
-    e.target.classList.remove("dragging");
+  listElement.addEventListener("dragend", (e) => {
+    // Use draggedItem directly if available, otherwise querySelector
+    const itemToEnd = draggedItem || document.querySelector(".dragging");
+    if (itemToEnd) {
+        itemToEnd.classList.remove("dragging");
+    }
+    draggedItem = null; // Reset dragged item
+    dragStartIndex = -1; // Reset start index
   });
 
-  promptList.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    const afterElement = getDragAfterElement(promptList, e.clientY);
-    const draggable = document.querySelector(".dragging");
+  listElement.addEventListener("dragover", (e) => {
+    e.preventDefault(); // Necessary to allow drop
+    const afterElement = getDragAfterElement(listElement, e.clientY);
+    const currentDraggable = document.querySelector(".dragging"); // Find the element being dragged
+    if (!currentDraggable) return; // Exit if no element is being dragged
+
     if (afterElement == null) {
-      promptList.appendChild(draggable);
+      listElement.appendChild(currentDraggable);
     } else {
-      promptList.insertBefore(draggable, afterElement);
+      listElement.insertBefore(currentDraggable, afterElement);
     }
   });
 
-  promptList.addEventListener("drop", (e) => {
+  listElement.addEventListener("drop", (e) => {
     e.preventDefault();
-    const newIndex = Array.from(promptList.children).indexOf(draggedItem);
-    const oldIndex = parseInt(draggedItem.dataset.index);
+    if (dragStartIndex === -1 || !draggedItem) {
+        console.error("SIDEBAR: Drop event occurred without a valid drag start.");
+        return; // Exit if drag didn't start properly
+    }
 
-    // Update promptList array
-    const [reorderedItem] = promptList.splice(oldIndex, 1);
-    promptList.splice(newIndex, 0, reorderedItem);
-    
+    // Calculate new index based on the final position in the DOM
+    const newIndex = Array.from(listElement.children).indexOf(draggedItem);
+    console.log(`SIDEBAR: Drop - Old Index: ${dragStartIndex}, New Index: ${newIndex}`); // Log indices
+
+    if (newIndex === -1) {
+        console.error("SIDEBAR: Dropped item not found in the list.");
+        // Potentially reset UI or just log error
+        renderPrompts(); // Re-render to reset state
+        return;
+    }
+
+    // Update promptList array using the stored dragStartIndex
+    const [reorderedItem] = promptList.splice(dragStartIndex, 1);
+    if (reorderedItem) {
+        promptList.splice(newIndex, 0, reorderedItem);
+    } else {
+        console.error("SIDEBAR: Failed to splice item from original position.");
+        renderPrompts(); // Re-render to reset state
+        return;
+    }
+
     console.log("SIDEBAR: Saving reordered list:", promptList); // Added log
 
     // Save to storage and re-render
     chrome.storage.local.set({ prompts: promptList })
       .then(() => {
         console.log("SIDEBAR: Reordered list saved successfully."); // Added log
+        // Re-render AFTER saving is confirmed to ensure UI reflects saved state
         renderPrompts();
       })
       .catch(error => {
         console.error("SIDEBAR: Error saving reordered list:", error); // Added error handling
+        // Optionally re-render even on error to reset UI?
+        // renderPrompts();
       });
+      
+    // Reset state variables after drop logic is complete
+    draggedItem = null;
+    dragStartIndex = -1;
   });
 }
 
