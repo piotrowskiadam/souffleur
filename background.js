@@ -58,7 +58,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // --- Sidebar/Side Panel Toggle Function ---
 // Tries to toggle Firefox sidebar or open Chrome side panel
-async function togglePanel(windowId) {
+async function togglePanel(tabId, windowId) { // Added tabId parameter
   try {
     // Check if sidebarAction is available (Firefox)
     if (typeof browser !== 'undefined' && browser.sidebarAction) {
@@ -67,16 +67,28 @@ async function togglePanel(windowId) {
     }
     // Check if sidePanel is available (Chrome) - use chrome namespace explicitly
     else if (typeof chrome !== 'undefined' && chrome.sidePanel) {
-      console.log("Attempting to open Chrome side panel.");
-      // Chrome's sidePanel API focuses on opening.
-      // We'll open it in the context of the current window if possible.
+      console.log(`Attempting to open Chrome side panel for tab: ${tabId}, window: ${windowId}`);
+      if (tabId) {
+        // Ensure the panel is enabled for the specific tab first
+        await chrome.sidePanel.setOptions({
+          tabId: tabId,
+          path: 'sidebar/sidebar.html', // Make sure path is set
+          enabled: true
+        });
+        console.log(`Enabled Chrome side panel for tab: ${tabId}`);
+      } else {
+         console.warn("No valid tabId provided for chrome.sidePanel.setOptions.");
+         // Optionally, you could try to query for the active tab here as a fallback
+      }
+      
+      // Now attempt to open the panel for the window
       if (windowId) {
         await chrome.sidePanel.open({ windowId });
-        console.log("Opened Chrome side panel for window:", windowId);
+        console.log(`Opened Chrome side panel for window: ${windowId}`);
       } else {
-         // Fallback for contexts where windowId might not be available
+        console.warn("No valid windowId provided for chrome.sidePanel.open. Opening globally.");
+        // Fallback for contexts where windowId might not be available
         await chrome.sidePanel.open({});
-        console.log("Opened Chrome side panel globally (no specific windowId).");
       }
     } else {
       console.error("Neither sidebarAction nor sidePanel API is available.");
@@ -90,16 +102,26 @@ async function togglePanel(windowId) {
 // Listen for clicks on the addon icon
 browser.action.onClicked.addListener((tab) => {
   console.log("Action icon clicked.");
-  // Pass the windowId from the tab context
-  togglePanel(tab.windowId);
+  // Pass both tabId and windowId
+  if (tab.id) {
+    togglePanel(tab.id, tab.windowId);
+  } else {
+    console.error("Action click: Missing tab ID.");
+    togglePanel(null, tab.windowId); // Try opening for window anyway
+  }
 });
 
 // --- Command Handling (Keyboard Shortcuts) ---
 browser.commands.onCommand.addListener((command, tab) => {
   console.log("Command received:", command);
   if (command === "_execute_sidebar_action") {
-    // Pass the windowId from the tab context
-    togglePanel(tab.windowId);
+    // Pass both tabId and windowId
+    if (tab.id) {
+      togglePanel(tab.id, tab.windowId);
+    } else {
+       console.error("Command: Missing tab ID.");
+       togglePanel(null, tab.windowId); // Try opening for window anyway
+    }
   }
 
   if (command === "toggle_spotlight") {
