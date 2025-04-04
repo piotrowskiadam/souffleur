@@ -6,7 +6,7 @@ A Chrome extension for managing and quickly accessing prompts for Large Language
 
 ## Features
 
-- **MacOS Spotlight-like Interface**: Press `Alt+P` to open a spotlight-style overlay in the middle of the viewport.
+- **MacOS Spotlight-like Interface**: Press `Ctrl+Shift+U` to open a spotlight-style overlay in the middle of the viewport.
 - **Chatbot Agnostic**: Works on any website, not just specific LLM platforms.
 - **Clipboard Integration**: Selected prompts are copied to clipboard instead of being inserted into input fields.
 - **Prompt Management**: Add, edit, delete, and reorder prompts through the Chrome Side Panel
@@ -30,15 +30,15 @@ A Chrome extension for managing and quickly accessing prompts for Large Language
 
 ## How to Use
 
-1. **Add Prompts**: Open the Side Panel (click the extension icon or press `Alt+Shift+P`) and add your prompts.
-2. **Access Prompts**: Press `Alt+P` to open the spotlight overlay, search for a prompt, and press Enter to copy it to clipboard.
+1. **Add Prompts**: Open the Side Panel (click the extension icon or press `Ctrl+Shift+Y`) and add your prompts.
+2. **Access Prompts**: Press `Ctrl+Shift+U` to open the spotlight overlay, search for a prompt, and press Enter to copy it to clipboard.
 3. **Manage Prompts**: Use the Side Panel to edit, delete, or reorder your prompts.
 4. **Import/Export**: Use the buttons at the bottom of the Side Panel to import or export your prompts as JSON.
 
 ## Keyboard Shortcuts
 
-- `Alt+Shift+P`: Open the Side Panel (Closing is manual via panel UI)
-- `Alt+P`: Open the spotlight overlay
+- `Ctrl+Shift+Y`: Open the Side Panel (Closing is manual via panel UI)
+- `Ctrl+Shift+U`: Open the spotlight overlay
 
 *(You can customize these shortcuts by navigating to `chrome://extensions/shortcuts` in your browser.)*
 

@@ -1,6 +1,6 @@
 # Souffleur Browser Extension
 
-![Souffleur Logo](souffleur_chrome/icons/icon128.png)
+![Souffleur Logo](souffleur_chrome/icons/icon128.png) 
 
 This repository contains the source code for the Souffleur browser extension, designed for managing and quickly accessing prompts for Large Language Models.
 
@@ -8,7 +8,7 @@ This repository contains the source code for the Souffleur browser extension, de
 
 ## ✨ Features
 
-- **MacOS Spotlight-like Interface**: Press `Alt+Shift+P` (Chrome) or `Alt+P` (Firefox) to open a spotlight-style overlay.
+- **MacOS Spotlight-like Interface**: Press `Ctrl+Shift+U` to open a spotlight-style overlay.
 - **Chatbot Agnostic**: Works on any website.
 - **Clipboard Integration**: Selected prompts are copied directly to your clipboard.
 - **Prompt Management**: Add, edit, delete, and reorder prompts through the Sidebar (Firefox) or Side Panel (Chrome).
