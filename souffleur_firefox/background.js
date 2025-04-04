@@ -142,7 +142,21 @@ chrome.runtime.onInstalled.addListener(handleInstallOrUpdate);
 chrome.runtime.onMessage.addListener(handleMessage);
 chrome.commands.onCommand.addListener(handleCommand);
 
-// Note: No browser.action.onClicked listener needed for Firefox sidebar,
-// as it's typically handled by the manifest's sidebar_action or browser_action key.
+// Explicitly handle action click for Firefox to ensure sidebar toggles
+// Use 'browser.action' as Firefox might prefer it over 'chrome.action' here
+if (typeof browser !== 'undefined' && browser.action && browser.sidebarAction) {
+  browser.action.onClicked.addListener((tab) => {
+    console.log("Firefox action icon clicked. Toggling sidebar.");
+    try {
+      // Use the specific Firefox API to toggle the sidebar
+      browser.sidebarAction.toggle();
+    } catch (error) {
+      console.error("Error toggling sidebar on action click:", error);
+    }
+  });
+} else {
+  // Log if we couldn't set up the listener (e.g., if APIs aren't available)
+  console.warn("Could not set up browser.action.onClicked listener for Firefox sidebar.");
+}
 
 console.log("Background script setup complete (Firefox). Listening for events.");
