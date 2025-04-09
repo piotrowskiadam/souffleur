@@ -2,7 +2,7 @@
 
 ![Souffleur Logo](icons/icon128.png)
 
-A Chrome extension for managing and quickly accessing prompts for Large Language Models with a MacOS Spotlight-like interface. (Uses Manifest V3).
+A Chrome extension for managing, importing, exporting, and quickly accessing prompts for Large Language Models with a MacOS Spotlight-like interface. (Uses Manifest V3).
 
 ## Features
 

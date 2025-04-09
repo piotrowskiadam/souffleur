@@ -1,12 +1,11 @@
 {
   "manifest_version": 3,
   "name": "Souffleur",
-  "version": "4.7.4",
-  "description": "Manages prompts for Large Language Models with a MacOS Spotlight-like interface",
+  "version": "4.7.6",
+  "description": "Manage prompts for Large Language Models with a Spotlight-like interface. Import/export prompts as JSON.",
   "permissions": [
     "storage",
     "activeTab",
-    "tabs",
     "clipboardWrite",
     "sidePanel"
   ],
