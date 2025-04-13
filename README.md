@@ -6,10 +6,10 @@ This repository contains the source code for the Souffleur browser extension, de
 
 <div>
   <a href="https://addons.mozilla.org/en-US/firefox/addon/souffleur/" style="display:inline-block;vertical-align:middle;">
-    <img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" alt="Get the Add-on for Firefox" width="250">
+    <img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" alt="Get the Add-on for Firefox" height="60">
   </a>
   <a href="https://chromewebstore.google.com/detail/souffleur/jpencajlhojahjjokfkjbjnchdbacpfn" style="display:inline-block;vertical-align:middle;margin-left:16px;">
-    <img src="https://developer.chrome.com/static/docs/webstore/branding/image/HRs9MPufa1J1h5glNhut.png" alt="Get it on Chrome Web Store" width="250" height="60">
+    <img src="https://developer.chrome.com/static/docs/webstore/branding/image/HRs9MPufa1J1h5glNhut.png" alt="Get it on Chrome Web Store" height="60">
   </a>
 </div>
 
