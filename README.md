@@ -4,7 +4,14 @@
 
 This repository contains the source code for the Souffleur browser extension, designed for managing and quickly accessing prompts for Large Language Models.
 
-<a href="https://addons.mozilla.org/en-US/firefox/addon/souffleur/"><img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" alt="Get the Add-on for Firefox" width="250"></a>
+<div>
+  <a href="https://addons.mozilla.org/en-US/firefox/addon/souffleur/" style="display:inline-block;vertical-align:middle;">
+    <img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" alt="Get the Add-on for Firefox" width="250">
+  </a>
+  <a href="https://chromewebstore.google.com/detail/souffleur/jpencajlhojahjjokfkjbjnchdbacpfn" style="display:inline-block;vertical-align:middle;margin-left:16px;">
+    <img src="https://developer.chrome.com/static/docs/webstore/branding/image/HRs9MPufa1J1h5glNhut.png" alt="Get it on Chrome Web Store" width="250">
+  </a>
+</div>
 
 ## ✨ Features
 
