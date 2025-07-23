@@ -6,7 +6,7 @@ A Firefox extension for managing and quickly accessing prompts for Large Languag
 
 ## Features
 
-- **MacOS Spotlight-like Interface**: Press `Ctrl+Shift+U` to open a spotlight-style overlay in the middle of the viewport.
+- **MacOS Spotlight-like Interface**: Press `Alt+P` to open a spotlight-style overlay in the middle of the viewport.
 - **Chatbot Agnostic**: Works on any website, not just specific LLM platforms.
 - **Clipboard Integration**: Selected prompts are copied to clipboard instead of being inserted into input fields.
 - **Prompt Management**: Add, edit, delete, and reorder prompts through the Firefox Sidebar
@@ -32,15 +32,15 @@ A Firefox extension for managing and quickly accessing prompts for Large Languag
 
 ## How to Use
 
-1. **Add Prompts**: Open the Sidebar (click the extension icon or press `Ctrl+Shift+Y`) and add your prompts.
-2. **Access Prompts**: Press `Ctrl+Shift+U` to open the spotlight overlay, search for a prompt, and press Enter to copy it to clipboard.
+1. **Add Prompts**: Open the Sidebar (click the extension icon or press `Ctrl+Alt+P`) and add your prompts.
+2. **Access Prompts**: Press `Alt+P` to open the spotlight overlay, search for a prompt, and press Enter to copy it to clipboard.
 3. **Manage Prompts**: Use the Sidebar to edit, delete, or reorder your prompts.
 4. **Import/Export**: Use the buttons at the bottom of the Sidebar to import or export your prompts as JSON.
 
 ## Keyboard Shortcuts
 
-- `Ctrl+Shift+Y`: Toggle the Sidebar
-- `Ctrl+Shift+U`: Open the spotlight overlay
+- `Ctrl+Alt+P`: Toggle the Sidebar
+- `Alt+P`: Open the spotlight overlay
 
 *(You can customize these shortcuts by navigating to `about:addons`, clicking the gear icon ⚙️, and selecting "Manage Extension Shortcuts".)*
 

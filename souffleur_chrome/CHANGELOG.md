@@ -5,6 +5,14 @@ All notable changes to the Souffleur project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.7.7] - 2025-07-23
+
+### Changed
+- Version number updated to maintain consistency with Firefox version
+
+### Fixed
+- Improved default prompts initialization to handle empty arrays
+
 ## [4.7.6] - 2025-04-09
 
 ### Fixed

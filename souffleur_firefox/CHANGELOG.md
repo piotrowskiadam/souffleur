@@ -5,6 +5,16 @@ All notable changes to the Souffleur project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.7.7] - 2025-07-23
+
+### Changed
+- Updated keyboard shortcuts to match Firefox UI: `Ctrl+Alt+P` for sidebar and `Alt+P` for spotlight
+
+### Fixed
+- Fixed issue with Firefox not rendering XML sitemaps correctly when the extension is installed
+- Added document type checking to prevent content script initialization on non-HTML documents
+- Improved default prompts initialization to handle empty arrays
+
 ## [4.7.4] - 2025-04-05
 
 ### Changed

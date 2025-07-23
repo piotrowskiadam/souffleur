@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Souffleur",
-  "version": "4.7.6",
+  "version": "4.7.7",
   "description": "Manage prompts for Large Language Models with a Spotlight-like interface. Import/export prompts as JSON.",
   "permissions": [
     "storage",

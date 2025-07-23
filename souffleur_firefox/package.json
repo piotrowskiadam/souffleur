@@ -1,6 +1,6 @@
 {
   "name": "souffleur",
-  "version": "4.0.0",
+  "version": "4.7.7",
   "description": "A Firefox extension for managing and quickly accessing prompts for Large Language Models",
   "main": "background.js",
   "scripts": {

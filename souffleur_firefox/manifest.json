@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Souffleur",
-  "version": "4.7.4",
+  "version": "4.7.7",
   "description": "Manages prompts for Large Language Models with a MacOS Spotlight-like interface",
   "permissions": [
     "storage",
@@ -44,13 +44,13 @@
   "commands": {
     "toggle_sidebar": {
       "suggested_key": {
-        "default": "Ctrl+Shift+Y"
+        "default": "Ctrl+Alt+P"
       },
       "description": "Toggle Souffleur sidebar"
     },
     "toggle_spotlight": {
       "suggested_key": {
-        "default": "Ctrl+Shift+U"
+        "default": "Alt+P"
       },
       "description": "Toggle Souffleur spotlight"
     }

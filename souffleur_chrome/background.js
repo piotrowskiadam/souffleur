@@ -17,13 +17,15 @@ function handleInstallOrUpdate(details) {
   // Initialize storage only on first install
   if (details.reason === "install") {
     console.log("Performing first-time storage initialization...");
+    console.log("Checking for existing prompts in storage...");
     chrome.storage.local.get("prompts")
       .then((result) => {
-        if (!result.prompts) {
-          console.log("No prompts found, initializing with default prompts.");
+        console.log("Storage get result:", result);
+        if (!result.prompts || result.prompts.length === 0) {
+          console.log("No prompts found or empty array, initializing with default prompts:", INITIAL_PROMPTS);
           return chrome.storage.local.set({ prompts: INITIAL_PROMPTS });
         } else {
-          console.log("Existing prompts found in storage.");
+          console.log("Existing prompts found in storage:", result.prompts);
         }
       })
       .then(() => {

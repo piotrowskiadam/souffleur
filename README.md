@@ -15,7 +15,7 @@ This repository contains the source code for the Souffleur browser extension, de
 
 ## ✨ Features
 
-- **MacOS Spotlight-like Interface**: Press `Ctrl+Shift+U` to open a spotlight-style overlay.
+- **MacOS Spotlight-like Interface**: Press `Alt+P` (Firefox) or `Ctrl+Shift+U` (Chrome) to open a spotlight-style overlay.
 - **Chatbot Agnostic**: Works on any website.
 - **Clipboard Integration**: Selected prompts are copied directly to your clipboard.
 - **Prompt Management**: Add, edit, delete, and reorder prompts through the Sidebar (Firefox) or Side Panel (Chrome).
