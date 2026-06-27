@@ -50,7 +50,7 @@
     },
     "toggle_spotlight": {
       "suggested_key": {
-        "default": "Alt+P"
+        "default": "Ctrl+Alt+1"
       },
       "description": "Toggle Souffleur spotlight"
     }

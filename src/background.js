@@ -2,8 +2,16 @@ console.log("Souffleur Background Service Worker starting...");
 
 // Default prompts to initialize storage with on first install.
 const INITIAL_PROMPTS = [
-  { id: "1", title: "Greeting", text: "Hello, how are you?" },
-  { id: "2", title: "Task Request", text: "Can you help me with a task?" },
+  {
+    id: "tutorial-welcome",
+    title: "💡 Welcome to Souffleur!",
+    text: "Welcome to your new spatial prompt manager! Here is how to get started:\n\n1. Press Ctrl+Shift+Y (Chrome) or Ctrl+Alt+P (Firefox) to open the Side Panel/Sidebar to add, edit, or import prompts.\n2. Open this Spotlight Search overlay on any webpage by pressing Ctrl+Shift+U (Chrome) or Ctrl+Alt+1 (Firefox).\n3. Type to filter your prompts, use Arrow keys to navigate, and press Enter to instantly copy to your clipboard.\n\nTry it now: select this prompt and press Enter to copy it!"
+  },
+  {
+    id: "example-code-review",
+    title: "📝 Example: Code Review Template",
+    text: "Act as a senior software engineer. Review the following code for security vulnerabilities, style issues, and performance bottlenecks. Suggest concrete refactoring changes:\n\n[insert your code here]"
+  }
 ];
 
 const isFirefox = typeof browser !== 'undefined' && typeof browser.sidebarAction !== 'undefined';
