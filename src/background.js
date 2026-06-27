@@ -105,18 +105,29 @@ async function handleCommandToggle(windowId) {
  * @param {object} tab - Information about the tab where the command was triggered.
  */
 function handleCommand(command, tab) {
-  console.log(`BACKGROUND: Command received: ${command}`);
+  console.log(`BACKGROUND: Command received: ${command}`, tab);
 
   if (command === "toggle_sidebar") {
-    handleCommandToggle(tab.windowId);
+    console.log("BACKGROUND: Handling toggle_sidebar command.");
+    const windowId = tab ? tab.windowId : null;
+    handleCommandToggle(windowId);
   }
 
   if (command === "toggle_spotlight") {
+    console.log("BACKGROUND: Handling toggle_spotlight command.");
     chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+      console.log("BACKGROUND: Found active tab:", tabs[0]?.id);
       if (tabs[0] && tabs[0].id) {
         const tabId = tabs[0].id;
+        console.log(`BACKGROUND: Sending toggleSpotlight to tab ${tabId}`);
         chrome.tabs.sendMessage(tabId, { action: "toggleSpotlight" })
-          .catch(error => console.error(`Error sending toggleSpotlight message to tab ${tabId}:`, error));
+          .then(() => {
+             console.log(`BACKGROUND: Successfully sent toggleSpotlight to tab ${tabId}`);
+          })
+          .catch(error => {
+            console.error(`BACKGROUND: Error sending toggleSpotlight message to tab ${tabId}:`, error);
+            console.warn("BACKGROUND: This error usually means the content script is not injected in this page (e.g. on browser system pages, or tabs that haven't been refreshed since loading the extension).");
+          });
       } else {
         console.error("Could not find active tab to send message.");
       }
@@ -135,5 +146,12 @@ if (isFirefox) {
     browser.sidebarAction.toggle().catch((err) => console.error("Error toggling sidebar on action click:", err));
   });
 }
+
+// Diagnostic command logger to check registered shortcuts on startup
+chrome.commands.getAll()
+  .then((commands) => {
+    console.log("BACKGROUND: Currently registered extension commands:", commands);
+  })
+  .catch((err) => console.error("BACKGROUND: Failed to retrieve commands:", err));
 
 console.log("Background script setup complete. Listening for events.");
