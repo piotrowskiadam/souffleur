@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="souffleur_chrome/icons/icon128.png" alt="Souffleur Logo" width="128" height="128" />
+  <img src="src/icons/icon128.png" alt="Souffleur Logo" width="128" height="128" />
 </p>
 
 <h1 align="center">Souffleur</h1>
