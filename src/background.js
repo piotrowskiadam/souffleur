@@ -14,6 +14,7 @@ const INITIAL_PROMPTS = [
   }
 ];
 
+const browserApi = typeof browser !== 'undefined' ? browser : chrome;
 const isFirefox = typeof browser !== 'undefined' && typeof browser.sidebarAction !== 'undefined';
 
 /**
@@ -24,29 +25,26 @@ const isFirefox = typeof browser !== 'undefined' && typeof browser.sidebarAction
 function handleInstallOrUpdate(details) {
   console.log("Extension installed or updated:", details.reason);
 
-  if (details.reason === "install") {
-    console.log("Performing first-time storage initialization...");
-    chrome.storage.sync.get("prompts")
-      .then((result) => {
-        if (!result.prompts || result.prompts.length === 0) {
-          console.log("No prompts found or empty array, initializing with default prompts:", INITIAL_PROMPTS);
-          return chrome.storage.sync.set({ prompts: INITIAL_PROMPTS });
-        } else {
-          console.log("Existing prompts found in storage:", result.prompts);
-        }
-      })
-      .then(() => {
-        console.log("Storage initialization complete.");
-      })
-      .catch((error) => {
-        console.error("Error during storage initialization:", error);
-      });
-  }
+  browserApi.storage.sync.get("prompts")
+    .then((result) => {
+      if (!result.prompts || result.prompts.length === 0) {
+        console.log("No prompts found or empty array, initializing with default prompts:", INITIAL_PROMPTS);
+        return browserApi.storage.sync.set({ prompts: INITIAL_PROMPTS });
+      } else {
+        console.log("Existing prompts found in storage:", result.prompts);
+      }
+    })
+    .then(() => {
+      console.log("Storage initialization complete.");
+    })
+    .catch((error) => {
+      console.error("Error during storage initialization:", error);
+    });
 
   // Setup Chrome Side Panel Behavior (Run on install/update)
-  if (!isFirefox && typeof chrome !== 'undefined' && chrome.sidePanel) {
+  if (!isFirefox && browserApi.sidePanel) {
     console.log("Setting up Chrome side panel behavior...");
-    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+    browserApi.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
       .then(() => console.log("Successfully set side panel behavior for action click."))
       .catch((error) => console.error("Error setting side panel behavior:", error));
   }
@@ -64,7 +62,7 @@ function handleMessage(request, sender, sendResponse) {
 
   if (request.action === "getPrompts") {
     console.log("Handling getPrompts request from storage.sync...");
-    chrome.storage.sync.get("prompts")
+    browserApi.storage.sync.get("prompts")
       .then((result) => {
         sendResponse({ prompts: result.prompts || [] });
       })
@@ -85,13 +83,13 @@ async function handleCommandToggle(windowId) {
   try {
     if (isFirefox) {
       console.log("Toggling Firefox sidebar via command.");
-      await browser.sidebarAction.toggle();
-    } else if (typeof chrome !== 'undefined' && chrome.sidePanel) {
+      await browserApi.sidebarAction.toggle();
+    } else if (browserApi.sidePanel) {
       console.log(`Attempting to open Chrome side panel via command for window: ${windowId}`);
       if (windowId) {
-        await chrome.sidePanel.open({ windowId });
+        await browserApi.sidePanel.open({ windowId });
       } else {
-        await chrome.sidePanel.open({});
+        await browserApi.sidePanel.open({});
       }
     }
   } catch (error) {
@@ -115,18 +113,18 @@ function handleCommand(command, tab) {
 
   if (command === "toggle_spotlight") {
     console.log("BACKGROUND: Handling toggle_spotlight command.");
-    chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+    browserApi.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
       console.log("BACKGROUND: Found active tab:", tabs[0]?.id);
       if (tabs[0] && tabs[0].id) {
         const tabId = tabs[0].id;
         console.log(`BACKGROUND: Sending toggleSpotlight to tab ${tabId}`);
-        chrome.tabs.sendMessage(tabId, { action: "toggleSpotlight" })
+        browserApi.tabs.sendMessage(tabId, { action: "toggleSpotlight" })
           .then(() => {
              console.log(`BACKGROUND: Successfully sent toggleSpotlight to tab ${tabId}`);
           })
           .catch(error => {
             console.error(`BACKGROUND: Error sending toggleSpotlight message to tab ${tabId}:`, error);
-            console.warn("BACKGROUND: This error usually means the content script is not injected in this page (e.g. on browser system pages, or tabs that haven't been refreshed since loading the extension).");
+            console.warn("BACKGROUND: This error usually means the content script is not injected in this page.");
           });
       } else {
         console.error("Could not find active tab to send message.");
@@ -136,19 +134,19 @@ function handleCommand(command, tab) {
 }
 
 // --- Register Listeners ---
-chrome.runtime.onInstalled.addListener(handleInstallOrUpdate);
-chrome.runtime.onMessage.addListener(handleMessage);
-chrome.commands.onCommand.addListener(handleCommand);
+browserApi.runtime.onInstalled.addListener(handleInstallOrUpdate);
+browserApi.runtime.onMessage.addListener(handleMessage);
+browserApi.commands.onCommand.addListener(handleCommand);
 
 // Firefox-specific listener: Toggle sidebar when extension action toolbar button is clicked
 if (isFirefox) {
-  browser.action.onClicked.addListener(() => {
-    browser.sidebarAction.toggle().catch((err) => console.error("Error toggling sidebar on action click:", err));
+  browserApi.action.onClicked.addListener(() => {
+    browserApi.sidebarAction.toggle().catch((err) => console.error("Error toggling sidebar on action click:", err));
   });
 }
 
 // Diagnostic command logger to check registered shortcuts on startup
-chrome.commands.getAll()
+browserApi.commands.getAll()
   .then((commands) => {
     console.log("BACKGROUND: Currently registered extension commands:", commands);
   })

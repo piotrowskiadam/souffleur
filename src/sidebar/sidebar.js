@@ -2,6 +2,9 @@
 let promptList = []; // In-memory array of prompt objects {id: string, title: string, text: string}
 let isAddingPrompt = false; // Flag to track if the 'Add Prompt' form is active
 
+const browserApi = typeof browser !== 'undefined' ? browser : chrome;
+const isFirefox = typeof browser !== 'undefined' && typeof browser.sidebarAction !== 'undefined';
+
 // Default prompts to initialize storage with on first load if empty.
 const INITIAL_PROMPTS = [
   {
@@ -20,11 +23,11 @@ const INITIAL_PROMPTS = [
  * Loads prompts from sync extension storage and initiates rendering.
  */
 function loadPrompts() {
-  chrome.storage.sync.get("prompts")
+  browserApi.storage.sync.get("prompts")
     .then((result) => {
       if (!result.prompts || result.prompts.length === 0) {
         console.log("SIDEBAR: Storage empty, populating default prompts...");
-        return chrome.storage.sync.set({ prompts: INITIAL_PROMPTS })
+        return browserApi.storage.sync.set({ prompts: INITIAL_PROMPTS })
           .then(() => {
             promptList = INITIAL_PROMPTS;
             renderPrompts();
@@ -189,7 +192,7 @@ function handleEditClick(e) {
         text: newText 
       };
 
-      chrome.storage.sync.set({ prompts: promptList })
+      browserApi.storage.sync.set({ prompts: promptList })
         .then(() => {
           console.log("SIDEBAR: Prompt updated and saved.");
           renderPrompts();
@@ -220,7 +223,7 @@ function handleDeleteClick(e) {
   if (confirm("Are you sure you want to delete this prompt?")) {
     promptList.splice(index, 1);
 
-    chrome.storage.sync.set({ prompts: promptList })
+    browserApi.storage.sync.set({ prompts: promptList })
       .then(() => {
         console.log("SIDEBAR: Prompt deleted.");
         renderPrompts();
@@ -297,7 +300,7 @@ function attachDragListeners() {
       if (reorderedItem) {
         promptList.splice(newIndex, 0, reorderedItem);
 
-        chrome.storage.sync.set({ prompts: promptList })
+        browserApi.storage.sync.set({ prompts: promptList })
           .then(() => {
             renderPrompts();
           })
@@ -364,7 +367,7 @@ function handleAddPromptToggle() {
       };
       promptList.unshift(newPrompt);
 
-      chrome.storage.sync.set({ prompts: promptList })
+      browserApi.storage.sync.set({ prompts: promptList })
         .then(() => {
           renderPrompts();
           addPromptForm.style.display = "none";
@@ -417,7 +420,7 @@ function handleFileImport(event) {
           text: p.text
         }));
 
-        chrome.storage.sync.set({ prompts: promptList })
+        browserApi.storage.sync.set({ prompts: promptList })
           .then(() => {
             renderPrompts();
             alert("Prompts imported successfully!");
@@ -466,11 +469,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const importBtn = document.getElementById("import-prompts");
   const exportBtn = document.getElementById("export-prompts");
   const fileInput = document.getElementById("import-file");
+  const instruction = document.getElementById("shortcut-instruction");
 
   if (addBtn) addBtn.addEventListener("click", handleAddPromptToggle);
   if (importBtn) importBtn.addEventListener("click", handleImportClick);
   if (exportBtn) exportBtn.addEventListener("click", handleExportClick);
   if (fileInput) fileInput.addEventListener("change", handleFileImport);
+
+  // Set the shortcut instruction text dynamically based on the browser platform
+  if (instruction) {
+    instruction.textContent = isFirefox 
+      ? "Press Ctrl+Alt+1 to open prompt spotlight" 
+      : "Press Ctrl+Shift+U to open prompt spotlight";
+  }
 
   loadPrompts();
 });

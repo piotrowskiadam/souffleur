@@ -33,7 +33,7 @@ Souffleur is a lightweight, keyboard-centric browser extension designed for deve
 
 Most prompt managers are clunky, require navigating away from your chat window, or force you to copy-paste between multiple tabs. **Souffleur is different:**
 
-- **Spotlight at your Fingertips**: Press `Alt+P` (Firefox) or `Ctrl+Shift+U` (Chrome) to open a macOS-style search overlay instantly. Search and select prompts entirely from your keyboard.
+- **Spotlight at your Fingertips**: Press `Ctrl+Alt+1` (Firefox) or `Ctrl+Shift+U` (Chrome) to open a macOS-style search overlay instantly. Search and select prompts entirely from your keyboard.
 - **Chatbot Agnostic**: Works seamlessly across ChatGPT, Claude, Gemini, local LLM interfaces, or any text field on the web.
 - **Side Panel Organization**: Manage, edit, and organize your prompts in a clean, native sidebar (Firefox) or side panel (Chrome) that stays open alongside your workspace.
 - **Zero-Friction Clipboard Integration**: Select a prompt, and it's instantly copied to your clipboard while the overlay closes automatically, letting you paste and continue your flow.

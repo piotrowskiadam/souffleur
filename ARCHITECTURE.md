@@ -23,7 +23,7 @@ sequenceDiagram
     participant Background Script
     participant Storage
     
-    User->>Background Script: Press Spotlight Shortcut (Alt+P or Ctrl+Shift+U)
+    User->>Background Script: Press Spotlight Shortcut (Ctrl+Alt+1 or Ctrl+Shift+U)
     Background Script->>Content Script: Send Message: { action: "toggleSpotlight" }
     Note over Content Script: Check if visible. If not:
     Content Script->>Background Script: Send Message: { action: "getPrompts" }

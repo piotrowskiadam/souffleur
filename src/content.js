@@ -8,6 +8,8 @@ let selectedIndex = -1; // Index of the currently highlighted result (-1 for non
 let isSpotlightVisible = false; // Flag to track visibility state
 let previousActiveElement = null; // Element that had focus before spotlight opened
 
+const browserApi = typeof browser !== 'undefined' ? browser : chrome;
+
 /**
  * Creates the isolated spotlight overlay DOM elements within a Shadow DOM.
  * Appends the shadow host to the document body.
@@ -154,13 +156,10 @@ function showSpotlight() {
   isSpotlightVisible = true;
 
   console.log("CONTENT: Sending getPrompts message to background.");
-  chrome.runtime.sendMessage({ action: "getPrompts" })
+  browserApi.runtime.sendMessage({ action: "getPrompts" })
     .then(response => {
       console.log("CONTENT: Received response for getPrompts:", response);
-      if (chrome.runtime.lastError) {
-        console.error("CONTENT: Error receiving getPrompts response:", chrome.runtime.lastError.message);
-        promptList = [];
-      } else if (response && response.prompts) {
+      if (response && response.prompts) {
         promptList = response.prompts;
       } else {
         console.error("Failed to get prompts from background or invalid response:", response);
@@ -517,7 +516,7 @@ function initialize() {
 }
 
 // --- Script Execution ---
-chrome.runtime.onMessage.addListener(handleBackgroundMessage);
+browserApi.runtime.onMessage.addListener(handleBackgroundMessage);
 
 if (document.readyState === "complete" || document.readyState === "interactive") {
   initialize();
