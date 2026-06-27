@@ -112,6 +112,17 @@ function setupSpotlightEventListeners() {
     }
   });
 
+  // Stop propagation of all keyboard events inside the spotlight container to prevent host page scripts from intercepting them
+  spotlightOverlay.addEventListener("keydown", (event) => {
+    event.stopPropagation();
+  });
+  spotlightOverlay.addEventListener("keypress", (event) => {
+    event.stopPropagation();
+  });
+  spotlightOverlay.addEventListener("keyup", (event) => {
+    event.stopPropagation();
+  });
+
   // Click outside the spotlight content (but on the overlay) to close
   spotlightOverlay.addEventListener("mousedown", (event) => {
     if (event.target === spotlightOverlay) {
@@ -147,11 +158,17 @@ function showSpotlight() {
   spotlightOverlay.style.display = "flex";
   spotlightInput.value = ""; // Clear previous input
 
+  // Focus immediately to intercept user keypresses instantly
+  if (spotlightInput) {
+    spotlightInput.focus();
+  }
+
+  // Guard focus timeout for slower page renders
   setTimeout(() => {
     if (spotlightInput) {
       spotlightInput.focus();
     }
-  }, 50);
+  }, 10);
 
   isSpotlightVisible = true;
 
@@ -222,17 +239,22 @@ function toggleSpotlight() {
     hideSpotlight();
   } else {
     let host = document.getElementById("souffleur-spotlight-root");
-    if (!host || !spotlightOverlay || !shadowRoot.contains(spotlightOverlay)) {
+    const needsCreation = !host || !spotlightOverlay || !shadowRoot.contains(spotlightOverlay);
+    if (needsCreation) {
       console.log("CONTENT: Recreating spotlight overlay for toggle.");
       createSpotlightOverlay();
       if (!spotlightOverlay) return;
     }
     
-    // Check environment to set proper delay (Firefox needs slightly more delay for DOM readiness)
-    const toggleDelay = (typeof browser !== 'undefined') ? 100 : 10;
-    setTimeout(() => {
+    // If we had to create it, wait a tiny bit for the DOM, otherwise show instantly!
+    const toggleDelay = needsCreation ? 50 : 0;
+    if (toggleDelay > 0) {
+      setTimeout(() => {
+        showSpotlight();
+      }, toggleDelay);
+    } else {
       showSpotlight();
-    }, toggleDelay);
+    }
   }
 }
 
