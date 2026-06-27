@@ -2,13 +2,36 @@
 let promptList = []; // In-memory array of prompt objects {id: string, title: string, text: string}
 let isAddingPrompt = false; // Flag to track if the 'Add Prompt' form is active
 
+// Default prompts to initialize storage with on first load if empty.
+const INITIAL_PROMPTS = [
+  {
+    id: "tutorial-welcome",
+    title: "💡 Welcome to Souffleur!",
+    text: "Welcome to your new spatial prompt manager! Here is how to get started:\n\n1. Press Ctrl+Shift+Y (Chrome) or Ctrl+Alt+P (Firefox) to open the Side Panel/Sidebar to add, edit, or import prompts.\n2. Open this Spotlight Search overlay on any webpage by pressing Ctrl+Shift+U (Chrome) or Ctrl+Alt+1 (Firefox).\n3. Type to filter your prompts, use Arrow keys to navigate, and press Enter to instantly copy to your clipboard.\n\nTry it now: select this prompt and press Enter to copy it!"
+  },
+  {
+    id: "example-code-review",
+    title: "📝 Example: Code Review Template",
+    text: "Act as a senior software engineer. Review the following code for security vulnerabilities, style issues, and performance bottlenecks. Suggest concrete refactoring changes:\n\n[insert your code here]"
+  }
+];
+
 /**
  * Loads prompts from sync extension storage and initiates rendering.
  */
 function loadPrompts() {
   chrome.storage.sync.get("prompts")
     .then((result) => {
-      promptList = result.prompts || [];
+      if (!result.prompts || result.prompts.length === 0) {
+        console.log("SIDEBAR: Storage empty, populating default prompts...");
+        return chrome.storage.sync.set({ prompts: INITIAL_PROMPTS })
+          .then(() => {
+            promptList = INITIAL_PROMPTS;
+            renderPrompts();
+            attachDragListeners();
+          });
+      }
+      promptList = result.prompts;
       console.log("SIDEBAR: Prompts loaded from sync storage:", promptList);
       renderPrompts();
       attachDragListeners();
