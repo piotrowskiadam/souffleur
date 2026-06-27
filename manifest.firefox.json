@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Souffleur",
   "version": "4.7.7",
-  "description": "Manages prompts for Large Language Models with a MacOS Spotlight-like interface",
+  "description": "Manage prompts for Large Language Models with a Spotlight-like interface. Sync prompts across devices.",
   "permissions": [
     "storage",
     "activeTab",

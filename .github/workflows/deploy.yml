@@ -6,18 +6,29 @@ on:
   workflow_dispatch: # Allows manual trigger from GitHub Actions tab
 
 jobs:
-  deploy-chrome:
-    name: Deploy Google Chrome Extension
+  deploy:
+    name: Package and Deploy Extensions
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Extensions
+        run: npm run build
+
       - name: Zip Chrome Extension
         run: |
-          cd souffleur_chrome
-          zip -r ../souffleur-chrome.zip .
-          cd ..
+          cd dist/chrome
+          zip -r ../../souffleur-chrome.zip .
+          cd ../..
 
       - name: Upload to Chrome Web Store
         uses: mnao305/chrome-extension-upload@v5.0.0
@@ -28,18 +39,11 @@ jobs:
           client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
           refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
 
-  deploy-firefox:
-    name: Deploy Mozilla Firefox Extension
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
       - name: Package & Publish to Mozilla Add-ons
         uses: kewisch/action-web-ext@v1
         with:
           cmd: sign
-          source: ./souffleur_firefox
+          source: ./dist/firefox
           apiKey: ${{ secrets.MOZILLA_JWT_ISSUER }}
           apiSecret: ${{ secrets.MOZILLA_JWT_SECRET }}
           channel: listed

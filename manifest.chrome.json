@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Souffleur",
   "version": "4.7.7",
-  "description": "Manage prompts for Large Language Models with a Spotlight-like interface. Import/export prompts as JSON.",
+  "description": "Manage prompts for Large Language Models with a Spotlight-like interface. Sync prompts across devices.",
   "permissions": [
     "storage",
     "activeTab",
@@ -14,16 +14,6 @@
   ],
   "background": {
     "service_worker": "background.js"
-  },
-  "sidebar_action": {
-    "default_title": "Souffleur",
-    "default_panel": "sidebar/sidebar.html",
-    "default_icon": {
-      "16": "icons/icon16.png",
-      "32": "icons/icon32.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
-    }
   },
   "action": {
     "default_title": "Toggle Souffleur Sidebar",

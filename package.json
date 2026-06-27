@@ -1,0 +1,11 @@
+{
+  "name": "souffleur",
+  "version": "4.7.7",
+  "description": "Unified codebase for the Souffleur browser extension.",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.2"
+  }
+}
