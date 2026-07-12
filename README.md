@@ -19,8 +19,8 @@
     <img src="https://developer.chrome.com/static/docs/webstore/branding/image/HRs9MPufa1J1h5glNhut.png" alt="Get it on Chrome Web Store" height="50">
   </a>
   &nbsp;&nbsp;
-  <a href="https://ko-fi.com/adampiotrowski">
-    <img src="https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_blue.png" alt="Support me on Ko-fi" height="50">
+  <a href="https://ko-fi.com/B5Z022ZL32">
+    <img src="https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_blue.png" alt="Support me on Ko-fi" height="36">
   </a>
 </p>
 
