@@ -1,3 +1,11 @@
+import { readFile } from 'node:fs/promises';
+
+const manifests = {};
+for (const target of ['chrome', 'firefox']) {
+  manifests[target] = JSON.parse(await readFile(new URL(`../../manifest.${target}.json`, import.meta.url), 'utf8'));
+}
+const platform = { linux: 'linux', darwin: 'mac', win32: 'windows' }[process.platform];
+
 export const examplePrompts = [
   { id: 'review', title: 'Code review', text: 'Act as a senior software engineer. Review this code for correctness, security, and performance.\n\n[insert your code here]' },
   { id: 'writing', title: 'Improve this text', text: 'Edit the following text for clarity and precision. Preserve the original meaning and tone.\n\n[your text]' },
@@ -11,7 +19,10 @@ function targetFor(page) {
 /** Exercise the real bundled background and UI with only browser APIs replaced. */
 export async function installApi(page, { prompts = examplePrompts, delay = 0 } = {}) {
   const target = targetFor(page);
-  await page.addInitScript(({ seed, delay, target }) => {
+  const commands = Object.entries(manifests[target].commands).map(([name, command]) => ({
+    name, shortcut: command.suggested_key?.[platform] ?? command.suggested_key?.default ?? '',
+  }));
+  await page.addInitScript(({ seed, delay, target, commands }) => {
     const handlers = [];
     const changes = [];
     const values = {};
@@ -51,7 +62,7 @@ export async function installApi(page, { prompts = examplePrompts, delay = 0 } =
         },
         onChanged: { addListener: listener => changes.push(listener) },
       },
-      commands: { onCommand: noEvent, getAll: async () => [{ name: 'toggle_spotlight', shortcut: target === 'firefox' ? 'Ctrl+Alt+1' : 'Ctrl+Shift+U' }] },
+      commands: { onCommand: noEvent, getAll: async () => commands },
     };
     if (target === 'firefox') {
       api.sidebarAction = { toggle: async () => {} };
@@ -69,7 +80,7 @@ export async function installApi(page, { prompts = examplePrompts, delay = 0 } =
       clipboard = text;
     } } });
     document.execCommand = () => false;
-  }, { seed: prompts, delay, target });
+  }, { seed: prompts, delay, target, commands });
 }
 
 export async function panel(page, options) {

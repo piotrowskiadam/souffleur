@@ -27,10 +27,14 @@ A small, keyboard-first prompt library for desktop **Chrome and Firefox**. Save 
 3. Open Spotlight on a regular webpage. Type words from the title or body, use ↑ / ↓, and press Enter to copy. The first result is ready to copy immediately.
 4. Paste into your chat. Spotlight restores focus to the field you were using.
 
-| Action | Chrome default | Firefox default |
-| --- | --- | --- |
-| Open Spotlight | Ctrl + Shift + U | Ctrl + Alt + 1 |
-| Open library / toggle Firefox sidebar | Ctrl + Shift + Y | Ctrl + Alt + P |
+| Action | Chrome default | Firefox on Linux | Firefox on Windows/macOS |
+| --- | --- | --- | --- |
+| Open Spotlight | Ctrl + Shift + U | Ctrl + Shift + . | Ctrl + Alt + 1 |
+| Open library / toggle Firefox sidebar | Ctrl + Shift + Y | Ctrl + Shift + , | Ctrl + Alt + P |
+
+The new Linux defaults are prepared for the next release. To use them with Firefox 4.8.0 now, open `about:addons` → gear menu → **Manage Extension Shortcuts**, find **Souffleur**, and assign the two combinations above. Hold Ctrl and Shift and press the comma or period key.
+
+Existing custom assignments take precedence over suggested defaults. If Firefox keeps an older binding, change it in the same manager. These defaults avoid known Firefox/GNOME bindings, but another extension, desktop customization or webpage can still use them. See [the shortcut research](docs/KEYBOARD-SHORTCUTS.md) for the rationale and checked sources.
 
 The library displays the **actual assigned Spotlight shortcut**, including custom bindings. If a shortcut is unavailable or conflicts with the OS, assign it in `chrome://extensions/shortcuts` or Firefox’s Add-ons Manager → Manage Extension Shortcuts. macOS may display Command for Ctrl-based bindings.
 
