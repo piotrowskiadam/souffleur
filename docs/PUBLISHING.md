@@ -47,7 +47,7 @@ Set these **GitHub Actions repository variables**, using the provider resource p
 | --- | --- |
 | `GOOGLE_CLOUD_PROJECT` | `souffleur-publishing-2026` |
 | `GOOGLE_SERVICE_ACCOUNT` | `souffleur-publisher@souffleur-publishing-2026.iam.gserviceaccount.com` |
-| `GOOGLE_WORKLOAD_IDENTITY_PROVIDER` | `projects/<project number>/locations/global/workloadIdentityPools/souffleur-github/providers/souffleur` |
+| `GOOGLE_WORKLOAD_IDENTITY_PROVIDER` | `projects/651575007317/locations/global/workloadIdentityPools/souffleur-github/providers/souffleur` |
 | `CHROME_PUBLISHER_ID` | `4f0fffd3-8066-448a-a5a8-b1398c6c37d5` |
 | `CHROME_EXTENSION_ID` | `jpencajlhojahjjokfkjbjnchdbacpfn` |
 
@@ -59,7 +59,7 @@ To revoke access, remove the service account from the Chrome publisher settings 
 
 The workflow uses repository Actions secrets **`AMO_JWT_ISSUER`** and **`AMO_JWT_SECRET`**, matching the names already configured for this repository. They must belong to an author of the existing add-on GUID `{0f0bacc8-3712-4a6a-8e2f-a7a900d91b2f}`. Do not rename them to `MOZILLA_JWT_*`. Keys are managed at [AMO API credentials](https://addons.mozilla.org/en-US/developers/addon/api/key/).
 
-The verification script authenticates against the private account-profile endpoint and checks add-on authorship; fetching a public listing alone would not prove credentials work. Publication uses the locked `web-ext` version with `channel: listed` and supplies the reviewer source ZIP. It unpacks the validated Firefox package rather than rebuilding source in the publishing job. `web-ext` rearchives those validated files for submission.
+The verification script authenticates against the private account-profile endpoint and checks add-on authorship; fetching a public listing alone would not prove credentials work. Publication uses the locked `web-ext` version with `channel: listed` and supplies the reviewer source ZIP. It unpacks the validated Firefox package rather than rebuilding source in the publishing job. `web-ext` rearchives those validated files for submission. It waits for upload validation and source attachment, then returns without waiting for store approval (`approvalTimeout: 0`); a slow manual review therefore does not cause a false deployment timeout. A pending version missing reviewer source is reported as incomplete rather than silently skipped; attach the matching archive in AMO before retrying.
 
 ## Reviewer source and reproducibility
 
@@ -74,6 +74,15 @@ npm run lint:firefox
 ```
 
 `dist/firefox` contains the submitted extension files. ZIP timestamps/compression may differ; the source and bundled file contents are the review inputs. CI uploads both extension ZIPs and the source ZIP together.
+
+## Initial setup verification (2026-10-31)
+
+The Google federation provider, service-account publisher grant and five repository variables are configured. Both authenticated read-only checks passed against the existing listings on merge commit `fdf91e4`:
+
+- [Chrome verification run](https://github.com/piotrowskiadam/souffleur/actions/runs/41226842959): GitHub OIDC → ten-minute Google token → Web Store API v2; published version `4.7.7`, no submitted version.
+- [Firefox verification run](https://github.com/piotrowskiadam/souffleur/actions/runs/41226794191): existing AMO credentials authenticated as an add-on author; published version `4.7.7`, candidate `4.8.0` absent.
+
+These were `verify` runs: no store uploads or publication requests were made. All 12 files in each Chrome/Firefox package were also reproduced byte-for-byte from the reviewer source archive using the locked build tools. The next stable GitHub release (e.g. `v4.8.0`) triggers the first automated submissions.
 
 ## References
 

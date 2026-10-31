@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createChromeStore } from '../scripts/lib/chrome-store.js';
 import { compareVersions } from '../scripts/lib/version.js';
-import { amoToken, verifyFirefox } from '../scripts/lib/firefox-store.js';
+import { amoToken, verifyFirefox, firefoxSubmissionState } from '../scripts/lib/firefox-store.js';
 
 const extensionId = 'jpencajlhojahjjokfkjbjnchdbacpfn';
 const publisherId = '4f0fffd3-8066-448a-a5a8-b1398c6c37d5';
@@ -109,7 +109,7 @@ test('AMO JWT has a one-minute lifetime, issuer and valid HS256 signature', () =
 
 test('Firefox verification proves authentication and ownership and reports a pending candidate', async () => {
   const calls = [];
-  const responses = [response({ id: 123 }), response({ authors: [{ id: 123 }], current_version: { version: '4.7.7' } }), response({ version: '4.8.0', channel: 'listed', file: { status: 'unreviewed' } })];
+  const responses = [response({ id: 123 }), response({ authors: [{ id: 123 }], current_version: { version: '4.7.7' } }), response({ version: '4.8.0', channel: 'listed', source: 'https://example.invalid/reviewer-source.zip', file: { status: 'unreviewed' } })];
   const result = await verifyFirefox({ issuer: 'i', secret: 's', addonId: '{guid}', version: '4.8.0', fetchImpl: async (url, options) => {
     calls.push({ url, ...options });
     return responses.shift();
@@ -117,6 +117,7 @@ test('Firefox verification proves authentication and ownership and reports a pen
   assert.equal(result.authenticated, true);
   assert.equal(result.publishedVersion, '4.7.7');
   assert.equal(result.existingStatus, 'unreviewed');
+  assert.equal(result.hasReviewerSource, true);
   assert.equal(calls[0].url, 'https://addons.mozilla.org/api/v5/accounts/profile/');
   for (const call of calls) {
     assert.equal(call.method, undefined);
@@ -135,7 +136,7 @@ test('Firefox candidate 404 is expected; other errors do not count as absent ver
   for (const status of [404, 403]) {
     const responses = [response({ id: 123 }), response({ authors: [{ id: 123 }] }), response({}, status)];
     const check = verifyFirefox({ issuer: 'i', secret: 's', addonId: 'guid', version: '4.8.0', fetchImpl: async () => responses.shift() });
-    if (status === 404) assert.equal((await check).existingVersion, null);
+    if (status === 404) { const result = await check; assert.equal(result.existingVersion, null); assert.equal(result.hasReviewerSource, false); }
     else await assert.rejects(check, /HTTP 403/);
   }
 });
@@ -162,4 +163,15 @@ test('release context permits manual main checks and matching stable releases, r
       else { assert.throws(run); assert.equal(await readFile(output, 'utf8'), ''); }
     }
   } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test('Firefox reruns skip complete submissions but refuse missing reviewer source and unsafe versions', () => {
+  const pending = { publishedVersion: '4.7.7', existingVersion: '4.8.0', existingStatus: 'unreviewed', existingChannel: 'listed', hasReviewerSource: true };
+  assert.equal(firefoxSubmissionState({ publishedVersion: '4.7.7' }, '4.8.0'), 'upload');
+  assert.equal(firefoxSubmissionState({ publishedVersion: '4.8.0' }, '4.8.0'), 'already-published');
+  assert.equal(firefoxSubmissionState(pending, '4.8.0'), 'already-submitted');
+  assert.throws(() => firefoxSubmissionState({ ...pending, hasReviewerSource: false }, '4.8.0'), /missing reviewer source/);
+  assert.throws(() => firefoxSubmissionState({ ...pending, existingDisabled: true }, '4.8.0'), /disabled/);
+  assert.throws(() => firefoxSubmissionState({ ...pending, existingChannel: 'unlisted' }, '4.8.0'), /another channel/);
+  assert.throws(() => firefoxSubmissionState({ publishedVersion: '4.10.0' }, '4.8.0'), /newer/);
 });
