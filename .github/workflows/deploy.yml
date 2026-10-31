@@ -5,10 +5,16 @@ on:
     types: [published]
   workflow_dispatch:
     inputs:
-      publish:
-        description: Upload to both stores (otherwise only validate and package)
-        type: boolean
-        default: false
+      operation:
+        description: Verify credentials only, or submit a validated version to the stores
+        type: choice
+        options: [verify, publish]
+        default: verify
+      store:
+        description: Store to operate on
+        type: choice
+        options: [both, chrome, firefox]
+        default: both
 
 permissions:
   contents: read
@@ -19,9 +25,11 @@ concurrency:
 
 jobs:
   validate:
-    outputs:
-      version: ${{ steps.version.outputs.version }}
+    if: github.event_name != 'release' || github.event.release.prerelease == false
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.context.outputs.version }}
+      operation: ${{ steps.context.outputs.operation }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -29,26 +37,71 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Read package version
-        id: version
-        run: node --input-type=module -e "import fs from 'node:fs'; console.log('version='+JSON.parse(fs.readFileSync('package.json')).version)" >> "$GITHUB_OUTPUT"
-      - name: Check release version
-        if: github.event_name == 'release'
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: node --input-type=module -e "import fs from 'node:fs'; const {version}=JSON.parse(fs.readFileSync('package.json')); if(process.env.RELEASE_TAG !== 'v'+version) throw new Error('Release tag must match package and manifest versions');"
+      - name: Check release tag and trusted ref
+        id: context
+        run: node scripts/release-context.js
       - run: npm run check
       - run: npx playwright install --with-deps chromium firefox
       - run: npm run test:ui
       - run: npm run package
+      - run: npm run package:source
       - uses: actions/upload-artifact@v7
         with:
           name: store-packages
           path: artifacts/*.zip
+          if-no-files-found: error
 
-  publish:
+  chrome:
     needs: validate
-    if: github.event_name == 'release' || inputs.publish == true
+    if: github.event_name == 'release' || inputs.store == 'both' || inputs.store == 'chrome'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Check non-secret Google configuration
+        env:
+          GOOGLE_CLOUD_PROJECT: ${{ vars.GOOGLE_CLOUD_PROJECT }}
+          GOOGLE_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GOOGLE_WORKLOAD_IDENTITY_PROVIDER }}
+          GOOGLE_SERVICE_ACCOUNT: ${{ vars.GOOGLE_SERVICE_ACCOUNT }}
+          CHROME_PUBLISHER_ID: ${{ vars.CHROME_PUBLISHER_ID }}
+          CHROME_EXTENSION_ID: ${{ vars.CHROME_EXTENSION_ID }}
+        run: |
+          for name in GOOGLE_CLOUD_PROJECT GOOGLE_WORKLOAD_IDENTITY_PROVIDER GOOGLE_SERVICE_ACCOUNT CHROME_PUBLISHER_ID CHROME_EXTENSION_ID; do
+            if [ -z "${!name}" ]; then echo "::error::Set repository Actions variable $name"; exit 1; fi
+          done
+      - uses: actions/download-artifact@v8
+        with:
+          name: store-packages
+          path: artifacts
+      - name: Authenticate with short-lived Google credentials
+        id: google
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ vars.GOOGLE_CLOUD_PROJECT }}
+          workload_identity_provider: ${{ vars.GOOGLE_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GOOGLE_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_lifetime: 600s
+          access_token_scopes: ${{ needs.validate.outputs.operation == 'publish' && 'https://www.googleapis.com/auth/chromewebstore' || 'https://www.googleapis.com/auth/chromewebstore.readonly' }}
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: Verify or publish with Chrome Web Store API v2
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
+          CHROME_PUBLISHER_ID: ${{ vars.CHROME_PUBLISHER_ID }}
+          CHROME_EXTENSION_ID: ${{ vars.CHROME_EXTENSION_ID }}
+          STORE_OPERATION: ${{ needs.validate.outputs.operation }}
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+        run: node scripts/chrome-store.js "$STORE_OPERATION" "artifacts/souffleur-chrome-$RELEASE_VERSION.zip"
+
+  firefox:
+    needs: validate
+    if: github.event_name == 'release' || inputs.store == 'both' || inputs.store == 'firefox'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -57,21 +110,14 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
       - uses: actions/download-artifact@v8
         with:
           name: store-packages
           path: artifacts
-      - name: Upload to Chrome Web Store
-        uses: mnao305/chrome-extension-upload@v5.0.0
-        with:
-          file-path: artifacts/souffleur-chrome-${{ needs.validate.outputs.version }}.zip
-          extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
-          client-id: ${{ secrets.CHROME_CLIENT_ID }}
-          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
-          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
-      - name: Publish to Mozilla Add-ons
-        run: npx web-ext sign --source-dir dist/firefox --channel listed
+      - name: Verify or publish the listed Firefox add-on, including reviewer source
         env:
-          WEB_EXT_API_KEY: ${{ secrets.MOZILLA_JWT_ISSUER }}
-          WEB_EXT_API_SECRET: ${{ secrets.MOZILLA_JWT_SECRET }}
+          AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+          AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+          STORE_OPERATION: ${{ needs.validate.outputs.operation }}
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+        run: node scripts/firefox-store.js "$STORE_OPERATION" "artifacts/souffleur-firefox-$RELEASE_VERSION.zip" "artifacts/souffleur-source-$RELEASE_VERSION.zip"

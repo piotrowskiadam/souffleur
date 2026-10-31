@@ -7,3 +7,6 @@ dist/
 playwright-report/
 test-results/
 artifacts/
+
+# Short-lived Google Actions credentials must never enter packages.
+gha-creds-*.json
