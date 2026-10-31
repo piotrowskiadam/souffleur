@@ -244,8 +244,10 @@ async function prepareImport(event) {
   if (!file) return;
   try {
     if (file.size > MAX_IMPORT_BYTES) throw new Error('Choose a JSON file smaller than 8 MB.');
-    pendingImport = parseImport(await file.text());
-    $('import-description').textContent = `${pendingImport.length} prompt${pendingImport.length === 1 ? '' : 's'} ready from “${file.name}”. Your library has ${prompts.length}.`;
+    // Replacement must use the library revision the user actually reviewed.
+    pendingImport = { prompts: parseImport(await file.text()), revision };
+    const count = pendingImport.prompts.length;
+    $('import-description').textContent = `${count} prompt${count === 1 ? '' : 's'} ready from “${file.name}”. Your library has ${prompts.length}.`;
     document.querySelector('[name="import-mode"][value="merge"]').checked = true;
     $('import-error').textContent = '';
     $('import-dialog').showModal();
@@ -261,7 +263,7 @@ async function confirmImport() {
   $('cancel-import').disabled = true;
   $('confirm-import').textContent = 'Importing…';
   try {
-    const state = await mutate({ type: 'import', mode, prompts: pendingImport, expectedRevision: revision });
+    const state = await mutate({ type: 'import', mode, prompts: pendingImport.prompts, expectedRevision: pendingImport.revision });
     pendingImport = null;
     $('import-dialog').close();
     $('recover-backup').hidden = mode !== 'replace' && $('recover-backup').hidden;

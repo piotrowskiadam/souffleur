@@ -3,6 +3,7 @@
 ## 4.8.0 — 2026-10-31
 
 - Move the library from a single quota-limited sync item to versioned local storage. Migrate existing data once; preserve empty libraries and the original recovery copy.
+- Preserve the library revision shown in import review so replacement cannot overwrite a later save from another panel. Exercise the Firefox build and `browser` namespace in Firefox UI tests.
 - Serialize background-owned mutations and detect conflicting edits across panels. Failed writes keep saved data and editor drafts intact.
 - Render prompt titles and bodies as literal text; remove HTML interpolation and prompt-content debug logging.
 - Add library search, explicit Save/Cancel, keyboard reorder, undo delete, import review/merge, and replacement recovery export.
