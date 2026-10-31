@@ -73,11 +73,8 @@ Run `npm audit` when updating tools. At the audit date, npm reports upstream low
 
 `.github/workflows/ci.yml` validates every push/PR, runs both UI engines plus the real Chrome extension test, and uploads both ZIPs. Failure reports are retained for seven days. CI never publishes stores.
 
-`.github/workflows/deploy.yml` repeats validation and UI tests before uploading. A published GitHub release must be tagged `v<package version>` (for example `v4.8.0`). The manual workflow defaults to validation/package only; explicitly enable its **publish** input to upload. Store publication also depends on signing credentials and store approval; pushing source code does not release a store version.
+`.github/workflows/deploy.yml` repeats validation and UI tests, then operates on the downloaded validated packages in independent Chrome and Firefox jobs. Publishing a stable GitHub release tagged `v<package version>` (for example `v4.8.0`) submits both stores. The manual workflow defaults to **verify**, which checks authentication and listing access without uploading. Select **publish** explicitly to submit from `main`, and optionally select only one store.
 
-Required GitHub Actions secrets:
-
-- `CHROME_EXTENSION_ID`, `CHROME_CLIENT_ID`, `CHROME_CLIENT_SECRET`, `CHROME_REFRESH_TOKEN`
-- `MOZILLA_JWT_ISSUER`, `MOZILLA_JWT_SECRET`
+See [Publishing](docs/PUBLISHING.md) for the one-time Google federation setup, existing AMO secrets, reviewer source packaging, and recovery steps. Store review remains required; pushing source code or making a prerelease does not update users' extensions.
 
 Check store listing/privacy text when changing data behavior. Download CI packages for testing before publishing a release. Never commit credentials, local browser profiles, or user prompt exports.

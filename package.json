@@ -8,7 +8,8 @@
     "test:ui": "playwright test",
     "lint:firefox": "web-ext lint --source-dir dist/firefox --warnings-as-errors",
     "check": "npm test && npm run build && npm run lint:firefox",
-    "package": "node scripts/package.js"
+    "package": "node scripts/package.js",
+    "package:source": "node scripts/package-source.js"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
