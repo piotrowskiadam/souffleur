@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Suggest Ctrl+Shift+Period for Spotlight and Ctrl+Shift+Comma for the library on Firefox/Linux. Avoid the previous Ctrl+Alt+P PDF presentation conflict; retain user-assigned shortcuts and document manual reassignment for existing installs.
+
 ## 4.8.0 — 2026-10-31
 
 - Move the library from a single quota-limited sync item to versioned local storage. Migrate existing data once; preserve empty libraries and the original recovery copy.

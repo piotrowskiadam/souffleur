@@ -348,7 +348,8 @@ browserApi.storage.onChanged.addListener((changes, area) => {
 });
 browserApi.commands.getAll().then(commands => {
   const shortcut = commands.find(command => command.name === 'toggle_spotlight')?.shortcut;
-  $('spotlight-shortcut').textContent = shortcut || 'Set a shortcut';
+  const label = shortcut?.split('+').map(key => ({ Comma: ',', Period: '.' }[key] ?? key)).join('+');
+  $('spotlight-shortcut').textContent = label || 'Set a shortcut';
 }).catch(() => { $('spotlight-shortcut').textContent = 'Browser shortcut'; });
 browserApi.storage.local.get('libraryBackup').then(result => { $('recover-backup').hidden = !result.libraryBackup; }).catch(() => {});
 loadPrompts();
