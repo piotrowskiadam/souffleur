@@ -111,3 +111,22 @@ test('keyboard move actions persist order', async ({ page }) => {
   await expect(page.getByRole('listitem').first()).toContainText('Improve this text');
   expect(await page.evaluate(() => window.__test.values.library.prompts[0].id)).toBe('writing');
 });
+
+test('replacement review cannot overwrite changes made after the preview opened', async ({ page }) => {
+  await panel(page);
+  await ready(page);
+  await page.locator('#import-file').setInputFiles({ name: 'replacement.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify([{ title: 'Replacement', text: 'Imported body' }])) });
+  await page.locator('[value="replace"]').check();
+  // A second panel saves through the same public message interface while review is open.
+  const response = await page.evaluate(() => (globalThis.browser ?? globalThis.chrome).runtime.sendMessage({
+    action: 'mutateLibrary',
+    operation: { type: 'create', prompt: { id: 'concurrent', title: 'Saved in another panel', text: 'Keep this new work.' } },
+  }));
+  expect(response.error).toBeUndefined();
+  await page.getByRole('button', { name: 'Import prompts', exact: true }).click();
+  await expect(page.locator('#import-error')).toContainText('The library changed');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Saved in another panel', exact: true })).toBeVisible();
+  await expect(page.getByRole('listitem')).toHaveCount(4);
+});

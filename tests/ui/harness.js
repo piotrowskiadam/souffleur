@@ -4,9 +4,14 @@ export const examplePrompts = [
   { id: 'explain', title: 'Explain a concept', text: 'Explain [concept] with a concrete example, then describe the common mistakes.' },
 ];
 
+function targetFor(page) {
+  return page.context().browser().browserType().name() === 'firefox' ? 'firefox' : 'chrome';
+}
+
 /** Exercise the real bundled background and UI with only browser APIs replaced. */
 export async function installApi(page, { prompts = examplePrompts, delay = 0 } = {}) {
-  await page.addInitScript(({ seed, delay }) => {
+  const target = targetFor(page);
+  await page.addInitScript(({ seed, delay, target }) => {
     const handlers = [];
     const changes = [];
     const values = {};
@@ -16,7 +21,7 @@ export async function installApi(page, { prompts = examplePrompts, delay = 0 } =
     const api = {
       runtime: {
         id: 'souffleur-test',
-        getURL: path => `${location.origin}/dist/chrome/${path}`,
+        getURL: path => `${location.origin}/dist/${target}/${path}`,
         onInstalled: noEvent,
         onMessage: { addListener: handler => handlers.push(handler) },
         sendMessage: message => new Promise((resolve, reject) => {
@@ -46,10 +51,16 @@ export async function installApi(page, { prompts = examplePrompts, delay = 0 } =
         },
         onChanged: { addListener: listener => changes.push(listener) },
       },
-      commands: { onCommand: noEvent, getAll: async () => [{ name: 'toggle_spotlight', shortcut: 'Ctrl+Shift+U' }] },
-      sidePanel: { setPanelBehavior: async () => {} },
+      commands: { onCommand: noEvent, getAll: async () => [{ name: 'toggle_spotlight', shortcut: target === 'firefox' ? 'Ctrl+Alt+1' : 'Ctrl+Shift+U' }] },
     };
-    window.chrome = api;
+    if (target === 'firefox') {
+      api.sidebarAction = { toggle: async () => {} };
+      api.action = { onClicked: noEvent };
+      window.browser = api;
+    } else {
+      api.sidePanel = { setPanelBehavior: async () => {} };
+      window.chrome = api;
+    }
     window.__toggle = () => {
       for (const handler of handlers) handler({ action: 'toggleSpotlight' }, { id: api.runtime.id }, () => {});
     };
@@ -58,24 +69,26 @@ export async function installApi(page, { prompts = examplePrompts, delay = 0 } =
       clipboard = text;
     } } });
     document.execCommand = () => false;
-  }, { seed: prompts, delay });
+  }, { seed: prompts, delay, target });
 }
 
 export async function panel(page, options) {
+  const target = targetFor(page);
   await installApi(page, options);
   // Delay the entry script until the actual bundled background has been installed.
   await page.route('**/sidebar/sidebar.js', route => route.fulfill({ body: '', contentType: 'text/javascript' }));
-  await page.goto('/dist/chrome/sidebar/sidebar.html');
-  await page.addScriptTag({ url: '/dist/chrome/background.js' });
-  await page.addScriptTag({ content: await (await page.request.get('/dist/chrome/sidebar/sidebar.js')).text() });
+  await page.goto(`/dist/${target}/sidebar/sidebar.html`);
+  await page.addScriptTag({ url: `/dist/${target}/background.js` });
+  await page.addScriptTag({ content: await (await page.request.get(`/dist/${target}/sidebar/sidebar.js`)).text() });
   await page.locator('#add-prompt-btn').waitFor();
 }
 
 export async function spotlight(page, options) {
+  const target = targetFor(page);
   await installApi(page, options);
   await page.goto('/tests/fixture.html');
-  await page.addScriptTag({ url: '/dist/chrome/background.js' });
-  await page.addScriptTag({ url: '/dist/chrome/content.js' });
+  await page.addScriptTag({ url: `/dist/${target}/background.js` });
+  await page.addScriptTag({ url: `/dist/${target}/content.js` });
   await page.locator('#chat').focus();
   await page.evaluate(() => window.__toggle());
   await page.getByRole('combobox', { name: 'Search prompts' }).waitFor();

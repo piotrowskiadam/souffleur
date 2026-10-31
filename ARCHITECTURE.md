@@ -26,7 +26,7 @@ All messages are internal. The background rejects senders whose extension ID dif
 | `mutateLibrary` | Exact extension URL `sidebar/sidebar.html` only | `{ action: 'mutateLibrary', operation }` | `{ prompts, revision }` or `{ error }` |
 | `toggleSpotlight` | Background → content script | `{ action: 'toggleSpotlight' }` | No application response |
 
-Mutation operations are `create`, `update`, `delete`, `move`, and `import`. They are validated by the repository before persistence. Updates/deletes carry the original `expected` title/text to detect changes made in another panel. Moves use `id` / `beforeId`, never DOM indices. Replacing an import also checks `expectedRevision`.
+Mutation operations are `create`, `update`, `delete`, `move`, and `import`. They are validated by the repository before persistence. Updates/deletes carry the original `expected` title/text to detect changes made in another panel. Moves use `id` / `beforeId`, never DOM indices. Replacing an import also checks `expectedRevision`. The import review captures this revision when its preview opens and retains it with the parsed prompts; it must not substitute the newest live revision when the user confirms. A change in another panel invalidates that replacement review, while additive merge can still use the latest library.
 
 The message listener returns `true` and uses `sendResponse`; it does not depend on asynchronous listener-return semantics differing between browser versions. Do not add `externally_connectable` without revisiting this boundary.
 
