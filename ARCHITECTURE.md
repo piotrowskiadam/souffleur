@@ -1,100 +1,77 @@
-# Architecture Documentation
+# Souffleur architecture
 
-This document explains the messaging workflow, encapsulation model, storage design, and runtime architecture of Souffleur. It is designed to serve as a guide for developers and AI agents maintaining the extension.
+Souffleur is a Manifest V3 extension with one source tree and two build targets. There is no framework or runtime dependency. esbuild produces self-contained IIFEs for Chrome’s service worker, Firefox’s nonpersistent background script, the content script, and the library panel.
 
----
+## Boundaries
 
-## 🛰️ Communication Architecture
+| Module | Responsibility |
+| --- | --- |
+| `src/background.js` | Own storage, authorize messages, route browser commands and panel actions. |
+| `src/lib/library.js` | Serialize reads/mutations, migrate legacy data, validate revisions, commit snapshots. Receives a storage adapter for testing. |
+| `src/lib/prompts.js` | Pure validation, import parsing, search, and stable-ID reordering. No browser or DOM access. |
+| `src/lib/browser.js` | Select the promise-based `browser` / `chrome` namespace. |
+| `src/lib/client.js` | Normalize runtime responses and connection errors. |
+| `src/lib/clipboard.js` | Await clipboard success, with a narrowly scoped legacy copy fallback for HTTP pages. |
+| `src/content.js` + `src/spotlight.css` | Lazy Shadow DOM / modal dialog, combobox, search results, keyboard interaction, focus restoration. |
+| `src/sidebar/` | Library search, editor, import review, export, reorder, delete/undo, user feedback. |
+| `src/theme.css` | Shared dark palette, text roles and font tokens, copied to the panel and bundled as text for Spotlight. |
 
-Souffleur consists of three primary components:
-1.  **Background Script** (Service Worker in Chrome, non-persistent script in Firefox): Listens for commands and toolbar button clicks, and routes messages.
-2.  **Content Script**: Injects the Spotlight overlay UI into active webpages and manages user search inputs.
-3.  **Sidebar Script**: Lives inside the side-panel (Chrome) or sidebar (Firefox) and allows users to manage their prompt library.
+## Message contract
 
-These components coordinate using `chrome.runtime.sendMessage` and `chrome.tabs.sendMessage`.
+All messages are internal. The background rejects senders whose extension ID differs from `runtime.id`.
 
-### Sequence Diagram: Toggling the Spotlight Overlay
+| Action | Sender | Payload | Response |
+| --- | --- | --- | --- |
+| `getPrompts` | Content script or library | `{ action: 'getPrompts' }` | `{ prompts, revision }` or `{ error }` |
+| `mutateLibrary` | Exact extension URL `sidebar/sidebar.html` only | `{ action: 'mutateLibrary', operation }` | `{ prompts, revision }` or `{ error }` |
+| `toggleSpotlight` | Background → content script | `{ action: 'toggleSpotlight' }` | No application response |
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Page DOM
-    participant Content Script
-    participant Background Script
-    participant Storage
-    
-    User->>Background Script: Press Spotlight Shortcut (Ctrl+Alt+1 or Ctrl+Shift+U)
-    Background Script->>Content Script: Send Message: { action: "toggleSpotlight" }
-    Note over Content Script: Check if visible. If not:
-    Content Script->>Background Script: Send Message: { action: "getPrompts" }
-    Background Script->>Storage: Query chrome.storage.sync
-    Storage-->>Background Script: Return prompt array
-    Background Script-->>Content Script: Return prompt response
-    Content Script->>Page DOM: Render Spotlight inside isolated Shadow DOM
-    User->>Content Script: Selects Prompt (clicks or hits Enter)
-    Content Script->>Page DOM: Copy text to clipboard using Clipboard API
-    Content Script->>Page DOM: Show floating toast feedback
-    Content Script->>Page DOM: Hide Overlay & restore previous element focus
+Mutation operations are `create`, `update`, `delete`, `move`, and `import`. They are validated by the repository before persistence. Updates/deletes carry the original `expected` title/text to detect changes made in another panel. Moves use `id` / `beforeId`, never DOM indices. Replacing an import also checks `expectedRevision`.
+
+The message listener returns `true` and uses `sendResponse`; it does not depend on asynchronous listener-return semantics differing between browser versions. Do not add `externally_connectable` without revisiting this boundary.
+
+## Data lifecycle
+
+`storage.local.library` contains:
+
+```json
+{
+  "schemaVersion": 1,
+  "revision": 0,
+  "prompts": [{ "id": "stable-id", "title": "Title", "text": "Literal text" }]
+}
 ```
 
----
+1. Read and validate the local snapshot. Unknown schemas stop with an error rather than being overwritten.
+2. If absent, read legacy `storage.sync.prompts`. Preserve `[]`; only an absent key gets two starter examples. Invalid legacy data stops migration, retaining the original data.
+3. Write the complete local snapshot. Subsequent reads prefer it, including after a worker restart.
+4. Run all reads/mutations through one background-owned promise queue. A failed operation does not poison the queue. Read current data inside the queue, apply a stable-ID operation, validate, then await `storage.local.set`.
+5. Increment the revision only in the committed snapshot. Panels apply `storage.onChanged` snapshots without destroying an open editor. Their in-flight replies cannot replace a newer revision.
+6. On replacement import, write `libraryBackup` and `library` in one storage call. The 4 MiB library cap leaves quota headroom for one recovery snapshot. This is not a multi-key database transaction or a substitute for an exported backup.
 
-## ✉️ Message API Definition
+The local API’s access level is restricted to trusted extension contexts where supported. Firefox versions without `setAccessLevel` still use the message boundary, but its content-script storage access is controlled by Firefox rather than this Chrome-specific API. Only the panel reads the pre-import backup directly. Legacy sync data is retained, never logged, and never updated by this version.
 
-The following messages are used to communicate between scripts:
+## UI lifecycle
 
-### 1. `getPrompts`
-*   **Sender**: Content Script (`src/content.js`)
-*   **Recipient**: Background Script (`src/background.js`)
-*   **Payload**: `{ action: "getPrompts" }`
-*   **Response**:
-    *   Success: `{ prompts: [{ id, title, text }, ...] }`
-    *   Error: `{ prompts: [], error: string }`
+Spotlight creates no DOM before the first request. A native `<dialog>` inside an extension-created shadow root enters the browser top layer. This avoids z-index competition with host dialogs. It contains an ARIA combobox/listbox, selected-first-result behavior, an explicit Tab cycle, and native modal inertness. Escape/outside click closes it. A generation token prevents slow reads or clipboard completions from mutating a later opening or stealing focus.
 
-### 2. `toggleSpotlight`
-*   **Sender**: Background Script (`src/background.js`)
-*   **Recipient**: Content Script (`src/content.js`)
-*   **Payload**: `{ action: "toggleSpotlight" }`
-*   **Response**: `void`
+Only successful copy closes Spotlight and shows success feedback. On HTTP pages, `navigator.clipboard` may be unavailable: a temporary textarea inside the dialog attempts `execCommand('copy')`. That deprecated API is a feature-detected fallback, not the primary path. A failed copy keeps the prompt available and reports a retryable error. Closing clears library arrays, preview DOM and query; focus returns to the deepest previously active open-shadow element if it still exists.
 
----
+Shadow DOM is a **style boundary, not a security boundary**. The host page can inspect preview nodes while open. Content never uses `innerHTML` or a prompt body in HTML attributes. Host capture-phase key handlers can still observe events before the dialog receives them; bubble propagation is stopped. Uncooperative webpages and privileged browser pages remain platform constraints.
 
-## 🗄️ Storage Strategy (`chrome.storage.sync`)
+The panel initially renders 50 matches and Spotlight 100. Show more loads another page; Spotlight’s arrow navigation expands the rendered range when necessary. Searching examines the full library, regardless of the rendered page. Neither view changes stored order during search.
 
-Souffleur uses **`chrome.storage.sync`** to persist the prompt list. This automatically synchronizes a user's prompt library across all their signed-in browser instances (e.g. Chrome accounts or Firefox profiles).
+## Browser adapters and permissions
 
-### Important API Limits
-Because `chrome.storage.sync` syncs data over Google/Mozilla servers, it enforces strict quotas that developers must keep in mind:
-*   **QUOTA_BYTES**: Total data storage is limited to **102,400 bytes (102KB)**.
-*   **QUOTA_BYTES_PER_ITEM**: Single items cannot exceed **8,192 bytes (8KB)**. Since the entire prompt list is stored under a single key (`"prompts"`), the entire prompt collection must fit within the 102KB quota.
-*   **MAX_WRITE_OPERATIONS_PER_HOUR**: A maximum of **1,800 write operations** can be executed per hour. This is generally not a bottleneck for manual configuration adjustments, but automated scripts or bulk drag-and-drop operations must throttle storage writes.
+Chrome uses `sidePanel` with `openPanelOnActionClick`; a command calls `sidePanel.open` directly to preserve the user gesture. Firefox uses `sidebarAction.toggle`. Both retrieve real command assignments through `commands.getAll`.
 
----
+Both targets require `storage` and `clipboardWrite`; Chrome additionally needs `sidePanel`. Declarative content-script matches make the overlay available on eligible URLs. No separate `host_permissions`, `tabs`, `activeTab`, or `scripting` permission is needed for the implemented behavior. An unavailable content-script receiver sets a small toolbar badge and explanatory title rather than silently claiming success.
 
-## 🛡️ Style Isolation (Shadow DOM)
+## Compatibility references
 
-To prevent host webpages from altering the Spotlight UI layout, the overlay is injected using **Shadow DOM encapsulation**:
+- [Chrome storage and access levels](https://developer.chrome.com/docs/extensions/reference/api/storage)
+- [Chrome side panel and user gestures](https://developer.chrome.com/docs/extensions/reference/api/sidePanel)
+- [Mozilla: interacting with the clipboard](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Interact_with_the_clipboard)
+- [Mozilla: extension data collection declarations](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/browser_specific_settings)
 
-1.  A top-level wrapper `<div id="souffleur-spotlight-root">` is appended to the webpage `document.body`.
-2.  An isolated shadow root is attached to this wrapper:
-    ```javascript
-    const shadowRoot = host.attachShadow({ mode: "open" });
-    ```
-3.  The extension's stylesheet `<style>` is appended directly *inside* this shadow root, alongside the spotlight DOM element `<div class="souffleur-spotlight">`.
-4.  **Benefits**:
-    *   **Immune to Page Resets**: Global page resets (e.g. `* { margin: 0; }` or custom body margins) are not applied inside the shadow root boundary.
-    *   **No Class Clashes**: The webpage's own CSS selectors cannot target selectors inside the shadow root.
-    *   **No Style Leakage**: Souffleur's styling rules are confined inside the shadow root and cannot leak out to affect the host webpage.
-
----
-
-## 🌐 Platform Detection & Routing
-
-The unified `background.js` handles platform routing dynamically at runtime by checking API definitions:
-
-```javascript
-const isFirefox = typeof browser !== 'undefined' && typeof browser.sidebarAction !== 'undefined';
-```
-
-*   **Firefox Routing**: Toggles the sidebar panel using the Gecko-native `browser.sidebarAction.toggle()`. It also registers a `browser.action.onClicked` listener to intercept extension toolbar clicks.
-*   **Chrome Routing**: Opens the side-panel using the Chromium-native `chrome.sidePanel.open()`. It configures Chrome to open the panel on action toolbar clicks by running `chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })`.
+Browser APIs, manifest compatibility, and store policies should be checked again before changing supported minimum versions or publishing a new release.

@@ -1,487 +1,352 @@
-// Global state variables
-let promptList = []; // In-memory array of prompt objects {id: string, title: string, text: string}
-let isAddingPrompt = false; // Flag to track if the 'Add Prompt' form is active
+import { browserApi } from '../lib/browser.js';
+import { request } from '../lib/client.js';
+import { copyText } from '../lib/clipboard.js';
+import { MAX_IMPORT_BYTES, parseImport, searchPrompts } from '../lib/prompts.js';
 
-const browserApi = typeof browser !== 'undefined' ? browser : chrome;
-const isFirefox = typeof browser !== 'undefined' && typeof browser.sidebarAction !== 'undefined';
+const $ = id => document.getElementById(id);
+const PAGE_SIZE = 50;
+let prompts = [];
+let revision = -1;
+let ready = false;
+let busy = false;
+let visibleCount = PAGE_SIZE;
+let editing = null;
+let undo = null;
+let pendingImport = null;
+let draggedId = null;
 
-// Default prompts to initialize storage with on first load if empty.
-const INITIAL_PROMPTS = [
-  {
-    id: "tutorial-welcome",
-    title: "💡 Welcome to Souffleur!",
-    text: "Welcome to your new spatial prompt manager! Here is how to get started:\n\n1. Press Ctrl+Shift+Y (Chrome) or Ctrl+Alt+P (Firefox) to open the Side Panel/Sidebar to add, edit, or import prompts.\n2. Open this Spotlight Search overlay on any webpage by pressing Ctrl+Shift+U (Chrome) or Ctrl+Alt+1 (Firefox).\n3. Type to filter your prompts, use Arrow keys to navigate, and press Enter to instantly copy to your clipboard.\n\nTry it now: select this prompt and press Enter to copy it!"
-  },
-  {
-    id: "example-code-review",
-    title: "📝 Example: Code Review Template",
-    text: "Act as a senior software engineer. Review the following code for security vulnerabilities, style issues, and performance bottlenecks. Suggest concrete refactoring changes:\n\n[insert your code here]"
-  }
-];
-
-/**
- * Loads prompts from sync extension storage and initiates rendering.
- */
-function loadPrompts() {
-  browserApi.storage.sync.get("prompts")
-    .then((result) => {
-      if (!result.prompts || result.prompts.length === 0) {
-        console.log("SIDEBAR: Storage empty, populating default prompts...");
-        return browserApi.storage.sync.set({ prompts: INITIAL_PROMPTS })
-          .then(() => {
-            promptList = INITIAL_PROMPTS;
-            renderPrompts();
-            attachDragListeners();
-          });
-      }
-      promptList = result.prompts;
-      console.log("SIDEBAR: Prompts loaded from sync storage:", promptList);
-      renderPrompts();
-      attachDragListeners();
-    })
-    .catch(error => {
-      console.error("SIDEBAR: Error loading prompts from sync storage:", error);
-      promptList = [];
-      renderPrompts();
-    });
+function element(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
 }
 
-/**
- * Truncates text to a specified maximum length.
- */
-function truncateText(text, maxLength = 150) {
-  if (typeof text !== 'string') return '';
-  if (text.length > maxLength) {
-    return text.substring(0, maxLength) + "...";
-  }
-  return text;
+function button(label, className, action, accessibleLabel = label) {
+  const node = element('button', className, label);
+  node.type = 'button';
+  node.setAttribute('aria-label', accessibleLabel);
+  node.addEventListener('click', action);
+  return node;
 }
 
-/**
- * Renders the current `promptList` array into the sidebar's container.
- */
-function renderPrompts() {
-  const list = document.getElementById("prompt-list");
-  if (!list) {
-    console.error("SIDEBAR: Cannot render prompts, list element not found.");
-    return;
-  }
-  list.innerHTML = "";
-
-  promptList.forEach((prompt, index) => {
-    const truncatedText = truncateText(prompt.text || "");
-
-    const promptElement = document.createElement("div");
-    promptElement.className = "prompt-item";
-    promptElement.draggable = true;
-    promptElement.dataset.index = index;
-    promptElement.innerHTML = `
-      <div class="drag-handle"></div>
-      <div class="prompt-content">
-        <h3>${prompt.title || "[No Title]"}</h3>
-        <p>${truncatedText || "[No Text]"}</p>
-        <div class="prompt-buttons">
-          <button class="copy-btn" data-index="${index}" title="Copy prompt text">
-            Copy
-            <span class="copied-label">Copied!</span>
-          </button>
-          <button class="edit-btn" data-index="${index}" title="Edit prompt">Edit</button>
-          <button class="delete-btn" data-index="${index}" title="Delete prompt">Delete</button>
-        </div>
-      </div>
-    `;
-    list.appendChild(promptElement);
-  });
-  
-  attachPromptListeners();
+function feedback(message, { error = false, canUndo = false } = {}) {
+  $('feedback').hidden = false;
+  $('feedback').dataset.error = String(error);
+  $('status-message').textContent = message;
+  $('undo-delete').hidden = !canUndo;
 }
 
-/**
- * Attaches event listeners to copy, edit, and delete buttons.
- */
-function attachPromptListeners() {
-  // Copy buttons
-  document.querySelectorAll(".copy-btn").forEach((btn) => {
-    btn.replaceWith(btn.cloneNode(true));
-  });
-  document.querySelectorAll(".copy-btn").forEach((btn) => {
-    btn.addEventListener("click", handleCopyClick);
-  });
-
-  // Edit buttons
-  document.querySelectorAll(".edit-btn").forEach((btn) => {
-    btn.replaceWith(btn.cloneNode(true));
-  });
-  document.querySelectorAll(".edit-btn").forEach((btn) => {
-    btn.addEventListener("click", handleEditClick);
-  });
-
-  // Delete buttons
-  document.querySelectorAll(".delete-btn").forEach((btn) => {
-    btn.replaceWith(btn.cloneNode(true));
-  });
-  document.querySelectorAll(".delete-btn").forEach((btn) => {
-    btn.addEventListener("click", handleDeleteClick);
-  });
+function updateControls() {
+  for (const id of ['add-prompt-btn', 'import-prompts', 'export-prompts']) $(id).disabled = busy || !ready;
+  for (const node of $('prompt-list').querySelectorAll('button')) node.disabled = busy || node.dataset.boundary === 'true';
+  $('library-search').disabled = !ready;
+  $('save-prompt').disabled = busy;
+  $('cancel-edit').disabled = busy;
+  $('prompt-editor').setAttribute('aria-busy', String(busy));
 }
 
-/**
- * Handles Copy button clicks.
- */
-function handleCopyClick(e) {
-  const index = parseInt(e.currentTarget.getAttribute("data-index"), 10);
-  if (isNaN(index) || index < 0 || index >= promptList.length) return;
-
-  const textToCopy = promptList[index].text;
-  navigator.clipboard.writeText(textToCopy)
-    .then(() => {
-      console.log("SIDEBAR: Text copied to clipboard.");
-      const copiedLabel = e.currentTarget.querySelector(".copied-label");
-      if (copiedLabel) {
-        copiedLabel.classList.add("show");
-        setTimeout(() => {
-          copiedLabel.classList.remove("show");
-        }, 1500);
-      }
-    })
-    .catch(err => {
-      console.error("SIDEBAR: Failed to copy text:", err);
-    });
+function applyState(state) {
+  if (state.revision < revision) return;
+  prompts = state.prompts;
+  revision = state.revision;
+  ready = true;
+  $('load-error').hidden = true;
+  $('prompt-list').setAttribute('aria-busy', 'false');
+  renderPrompts();
+  updateControls();
 }
 
-/**
- * Handles Edit button clicks. Opens edit mode.
- */
-function handleEditClick(e) {
-  const index = parseInt(e.currentTarget.getAttribute("data-index"), 10);
-  if (isNaN(index) || index < 0 || index >= promptList.length) return;
-
-  const prompt = promptList[index];
-  const promptElement = e.currentTarget.closest(".prompt-item");
-  const promptContent = promptElement.querySelector(".prompt-content");
-
-  if (promptElement.querySelector(".edit-form")) return;
-
-  const editForm = document.createElement("div");
-  editForm.className = "edit-form";
-  editForm.innerHTML = `
-    <input type="text" class="edit-title" value="${prompt.title || ''}" placeholder="Prompt Title" />
-    <textarea class="edit-text" placeholder="Enter your prompt here">${prompt.text || ''}</textarea>
-    <div class="edit-buttons">
-      <button class="save-btn">Save</button>
-      <button class="cancel-btn">Cancel</button>
-    </div>
-  `;
-
-  if (promptContent) promptContent.style.display = "none";
-  promptElement.appendChild(editForm);
-
-  const saveBtn = editForm.querySelector(".save-btn");
-  const cancelBtn = editForm.querySelector(".cancel-btn");
-  const editTitleInput = editForm.querySelector(".edit-title");
-  const editTextarea = editForm.querySelector(".edit-text");
-
-  saveBtn.addEventListener("click", () => {
-    const newTitle = editTitleInput.value.trim();
-    const newText = editTextarea.value.trim();
-
-    if (newTitle && newText) {
-      promptList[index] = { 
-        id: prompt.id || `prompt-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-        title: newTitle, 
-        text: newText 
-      };
-
-      browserApi.storage.sync.set({ prompts: promptList })
-        .then(() => {
-          console.log("SIDEBAR: Prompt updated and saved.");
-          renderPrompts();
-        })
-        .catch(error => {
-          console.error("SIDEBAR: Error saving updated prompt:", error);
-          if (promptContent) promptContent.style.display = "block";
-          promptElement.removeChild(editForm);
-        });
-    } else {
-      alert("Title and prompt text cannot be empty.");
-    }
-  });
-
-  cancelBtn.addEventListener("click", () => {
-    promptElement.removeChild(editForm);
-    if (promptContent) promptContent.style.display = "block";
-  });
+async function loadPrompts() {
+  $('retry-load').disabled = true;
+  try { applyState(await request('getPrompts')); }
+  catch (error) {
+    $('load-error').hidden = false;
+    $('load-error-text').textContent = error.message;
+    $('prompt-count').textContent = 'Your library could not be loaded.';
+    $('prompt-list').setAttribute('aria-busy', 'false');
+  } finally { $('retry-load').disabled = false; }
 }
 
-/**
- * Handles Delete button clicks.
- */
-function handleDeleteClick(e) {
-  const index = parseInt(e.currentTarget.getAttribute("data-index"), 10);
-  if (isNaN(index) || index < 0 || index >= promptList.length) return;
-
-  if (confirm("Are you sure you want to delete this prompt?")) {
-    promptList.splice(index, 1);
-
-    browserApi.storage.sync.set({ prompts: promptList })
-      .then(() => {
-        console.log("SIDEBAR: Prompt deleted.");
-        renderPrompts();
-      })
-      .catch(error => {
-        console.error("SIDEBAR: Error deleting prompt:", error);
-        renderPrompts();
-      });
-  }
-}
-
-/**
- * Drag-and-drop listener registry.
- */
-function attachDragListeners() {
-  const listElement = document.getElementById("prompt-list");
-  if (!listElement) return;
-
-  let draggedItem = null;
-  let dragStartIndex = -1;
-
-  listElement.addEventListener("dragstart", (e) => {
-    draggedItem = e.target.closest(".prompt-item");
-    if (!draggedItem) return;
-
-    dragStartIndex = parseInt(draggedItem.dataset.index, 10);
-    setTimeout(() => {
-      if (draggedItem) draggedItem.classList.add("dragging");
-    }, 0);
-  });
-
-  listElement.addEventListener("dragend", (e) => {
-    const itemToEnd = draggedItem || document.querySelector(".dragging");
-    if (itemToEnd) {
-      itemToEnd.classList.remove("dragging");
-    }
-    draggedItem = null;
-    dragStartIndex = -1;
-  });
-
-  listElement.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    const afterElement = getDragAfterElement(listElement, e.clientY);
-    const currentDraggable = document.querySelector(".dragging");
-    if (!currentDraggable) return;
-
-    if (afterElement == null) {
-      listElement.appendChild(currentDraggable);
-    } else {
-      listElement.insertBefore(currentDraggable, afterElement);
-    }
-  });
-
-  listElement.addEventListener("drop", (e) => {
-    e.preventDefault();
-    if (dragStartIndex === -1 || !draggedItem) {
-      if (draggedItem) draggedItem.classList.remove("dragging");
-      draggedItem = null;
-      return;
-    }
-
-    const newIndex = Array.from(listElement.children).indexOf(draggedItem);
-
-    if (newIndex === -1 || dragStartIndex < 0 || dragStartIndex >= promptList.length) {
-      renderPrompts();
-      draggedItem.classList.remove("dragging");
-      draggedItem = null;
-      dragStartIndex = -1;
-      return;
-    }
-
-    if (dragStartIndex !== newIndex) {
-      const [reorderedItem] = promptList.splice(dragStartIndex, 1);
-      if (reorderedItem) {
-        promptList.splice(newIndex, 0, reorderedItem);
-
-        browserApi.storage.sync.set({ prompts: promptList })
-          .then(() => {
-            renderPrompts();
-          })
-          .catch(error => {
-            console.error("SIDEBAR: Error saving drag order:", error);
-            renderPrompts();
-          });
-      }
-    } else {
-      if (draggedItem) draggedItem.classList.remove("dragging");
-    }
-
-    draggedItem = null;
-    dragStartIndex = -1;
-  });
-}
-
-function getDragAfterElement(container, y) {
-  const draggableElements = [
-    ...container.querySelectorAll(".prompt-item:not(.dragging)"),
-  ];
-
-  return draggableElements.reduce(
-    (closest, child) => {
-      const box = child.getBoundingClientRect();
-      const offset = y - box.top - box.height / 2;
-      if (offset < 0 && offset > closest.offset) {
-        return { offset: offset, element: child };
-      } else {
-        return closest;
-      }
-    },
-    { offset: Number.NEGATIVE_INFINITY }
-  ).element;
-}
-
-/**
- * Handles Add/Save prompt toggle.
- */
-function handleAddPromptToggle() {
-  const addPromptForm = document.getElementById("add-prompt-form");
-  const addPromptBtn = document.getElementById("add-prompt-btn");
-  const titleInput = document.getElementById("new-prompt-title");
-  const textInput = document.getElementById("new-prompt-text");
-
-  if (!addPromptForm || !addPromptBtn || !titleInput || !textInput) return;
-
-  if (!isAddingPrompt) {
-    addPromptForm.style.display = "block";
-    addPromptBtn.textContent = "Save Prompt";
-    titleInput.value = "";
-    textInput.value = "";
-    titleInput.focus();
-    isAddingPrompt = true;
-  } else {
-    const title = titleInput.value.trim();
-    const text = textInput.value.trim();
-
-    if (title && text) {
-      const newPrompt = {
-        id: `prompt-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-        title,
-        text
-      };
-      promptList.unshift(newPrompt);
-
-      browserApi.storage.sync.set({ prompts: promptList })
-        .then(() => {
-          renderPrompts();
-          addPromptForm.style.display = "none";
-          addPromptBtn.textContent = "Add Prompt";
-          isAddingPrompt = false;
-        })
-        .catch(error => {
-          console.error("SIDEBAR: Error saving prompt:", error);
-        });
-    } else {
-      alert("Title and prompt text cannot be empty.");
-    }
-  }
-}
-
-/**
- * Handles the Import button triggers.
- */
-function handleImportClick() {
-  const importFileInput = document.getElementById("import-file");
-  if (importFileInput) {
-    importFileInput.click();
-  }
-}
-
-/**
- * Parses and validates imported JSON data.
- */
-function handleFileImport(event) {
-  const file = event.target.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const importedPrompts = JSON.parse(e.target.result);
-        if (!Array.isArray(importedPrompts)) {
-          throw new Error("Imported file is not a valid JSON array.");
-        }
-
-        // Validate and filter imported entries (ensuring title & text are strings)
-        const validPrompts = importedPrompts.filter(p => p && typeof p.title === 'string' && typeof p.text === 'string');
-        if (validPrompts.length !== importedPrompts.length) {
-          console.warn("SIDEBAR: Staggered structure import cleanup completed.");
-        }
-
-        // Give them unique IDs if they don't have one
-        promptList = validPrompts.map(p => ({
-          id: p.id || `prompt-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-          title: p.title,
-          text: p.text
-        }));
-
-        browserApi.storage.sync.set({ prompts: promptList })
-          .then(() => {
-            renderPrompts();
-            alert("Prompts imported successfully!");
-          })
-          .catch(error => {
-            console.error("SIDEBAR: Error saving imported prompts:", error);
-            alert("Error saving imported prompts.");
-          });
-      } catch (error) {
-        console.error("SIDEBAR: Error parsing imported file:", error);
-        alert("Error importing prompts. Make sure the file contains a valid JSON array of prompts.");
-      } finally {
-        event.target.value = null;
-      }
-    };
-    reader.readAsText(file);
-  }
-}
-
-/**
- * Exports prompt list to JSON.
- */
-function handleExportClick() {
+async function mutate(operation) {
+  if (busy) throw new Error('A save is already in progress. Try again when it finishes.');
+  busy = true;
+  updateControls();
   try {
-    const dataToExport = Array.isArray(promptList) ? promptList : [];
-    const dataStr = JSON.stringify(dataToExport, null, 2);
-    const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
-    const exportFileDefaultName = "souffleur_prompts.json";
-
-    const linkElement = document.createElement("a");
-    linkElement.setAttribute("href", dataUri);
-    linkElement.setAttribute("download", exportFileDefaultName);
-    document.body.appendChild(linkElement);
-    linkElement.click();
-    document.body.removeChild(linkElement);
-    console.log("SIDEBAR: Export initiated.");
-  } catch (error) {
-    console.error("SIDEBAR: Error during export:", error);
-    alert("Failed to export prompts.");
+    const state = await request('mutateLibrary', { operation });
+    applyState(state);
+    return state;
+  } finally {
+    busy = false;
+    updateControls();
   }
 }
 
-// --- Initial Setup ---
-document.addEventListener('DOMContentLoaded', () => {
-  const addBtn = document.getElementById("add-prompt-btn");
-  const importBtn = document.getElementById("import-prompts");
-  const exportBtn = document.getElementById("export-prompts");
-  const fileInput = document.getElementById("import-file");
-  const instruction = document.getElementById("shortcut-instruction");
+function focusPrompt(id, selector = '.edit-btn') {
+  const row = [...$('prompt-list').children].find(node => node.dataset.id === id);
+  (row?.querySelector(selector) ?? $('add-prompt-btn')).focus({ preventScroll: true });
+}
 
-  if (addBtn) addBtn.addEventListener("click", handleAddPromptToggle);
-  if (importBtn) importBtn.addEventListener("click", handleImportClick);
-  if (exportBtn) exportBtn.addEventListener("click", handleExportClick);
-  if (fileInput) fileInput.addEventListener("change", handleFileImport);
-
-  // Set the shortcut instruction text dynamically based on the browser platform
-  if (instruction) {
-    instruction.textContent = isFirefox 
-      ? "Press Ctrl+Alt+1 to open prompt spotlight" 
-      : "Press Ctrl+Shift+U to open prompt spotlight";
+function renderPrompts() {
+  const focused = document.activeElement;
+  const focusedId = focused?.closest('.prompt-item')?.dataset.id;
+  const action = focused?.dataset.action;
+  const filtered = searchPrompts(prompts, $('library-search').value);
+  const query = $('library-search').value.trim();
+  const shown = filtered.slice(0, visibleCount);
+  $('prompt-count').textContent = query
+    ? `${filtered.length} of ${prompts.length} prompts match`
+    : `${prompts.length} prompt${prompts.length === 1 ? '' : 's'} · saved on this device`;
+  $('show-more').hidden = shown.length >= filtered.length;
+  const fragment = document.createDocumentFragment();
+  if (!filtered.length) {
+    const empty = element('li', 'empty-state');
+    empty.setAttribute('role', 'listitem');
+    empty.append(element('h3', '', query ? 'No matching prompts' : 'Make room for your next idea.'), element('p', '', query ? 'Try another word, or clear your search to see the library.' : 'Save a prompt you use often, then find it instantly from Spotlight.'));
+    empty.append(query ? button('Clear search', '', () => { $('library-search').value = ''; renderPrompts(); $('library-search').focus(); }) : button('Create your first prompt', 'primary', () => openEditor()));
+    fragment.append(empty);
   }
+  for (const prompt of shown) {
+    const index = prompts.findIndex(item => item.id === prompt.id);
+    const row = element('li', 'prompt-item');
+    row.dataset.id = prompt.id;
+    row.setAttribute('role', 'listitem');
+    const title = element('h3', '', prompt.title);
+    title.dir = 'auto';
+    const preview = element('p', 'prompt-preview', prompt.text.slice(0, 300));
+    preview.dir = 'auto';
+    const actions = element('div', 'prompt-buttons');
+    const copy = button('Copy', 'copy-btn', async () => {
+      copy.disabled = true;
+      try { await copyText(prompt.text); feedback(`Copied “${prompt.title}”.`); }
+      catch (error) { feedback(error.message, { error: true }); }
+      finally { copy.disabled = false; }
+    }, `Copy ${prompt.title}`);
+    const edit = button('Edit', 'edit-btn', () => openEditor(prompt), `Edit ${prompt.title}`);
+    edit.dataset.action = 'edit';
+    const more = element('details', 'more-actions');
+    const summary = element('summary', '', 'More');
+    summary.setAttribute('aria-label', `More actions for ${prompt.title}`);
+    const menu = element('div', 'action-menu');
+    const up = button('Move up', '', () => reorder(prompt.id, prompts[index - 1]?.id), `Move ${prompt.title} up`);
+    up.dataset.boundary = String(index === 0);
+    up.disabled = index === 0 || busy;
+    const down = button('Move down', '', () => reorder(prompt.id, prompts[index + 2]?.id ?? null), `Move ${prompt.title} down`);
+    down.dataset.boundary = String(index === prompts.length - 1);
+    down.disabled = index === prompts.length - 1 || busy;
+    menu.append(up, down, button('Delete prompt', 'delete-btn', () => deletePrompt(prompt), `Delete ${prompt.title}`));
+    more.append(summary, menu);
+    more.addEventListener('toggle', () => {
+      if (more.open) for (const other of $('prompt-list').querySelectorAll('details')) if (other !== more) other.open = false;
+    });
+    actions.append(copy, edit, more);
+    row.append(title, preview, actions);
+    row.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && more.open) { more.open = false; summary.focus(); event.stopPropagation(); }
+    });
+    // Pointer users can drag the title; move actions give keyboard users parity.
+    title.draggable = !query && !busy;
+    title.title = query ? '' : 'Drag to reorder, or use More → Move up / Move down';
+    title.addEventListener('dragstart', event => {
+      if (busy) { event.preventDefault(); return; }
+      draggedId = prompt.id;
+      event.dataTransfer.setData('text/plain', prompt.id);
+      event.dataTransfer.effectAllowed = 'move';
+      row.classList.add('dragging');
+    });
+    title.addEventListener('dragend', clearDrag);
+    fragment.append(row);
+  }
+  $('prompt-list').replaceChildren(fragment);
+  if (focusedId && action === 'edit') focusPrompt(focusedId);
+}
 
-  loadPrompts();
+function draftChanged() {
+  if ($('prompt-editor').hidden) return false;
+  return $('prompt-title').value !== (editing?.title ?? '') || $('prompt-text').value !== (editing?.text ?? '');
+}
+
+function openEditor(prompt = null) {
+  if (busy || (! $('prompt-editor').hidden && draftChanged() && !confirm('Discard the current draft and open another prompt?'))) return;
+  editing = prompt ? { ...prompt } : null;
+  $('editor-heading').textContent = prompt ? 'Edit prompt' : 'New prompt';
+  $('prompt-title').value = prompt?.title ?? '';
+  $('prompt-text').value = prompt?.text ?? '';
+  $('editor-error').textContent = '';
+  $('prompt-editor').hidden = false;
+  $('prompt-title').focus();
+}
+
+function closeEditor() {
+  const id = editing?.id;
+  $('prompt-editor').hidden = true;
+  $('prompt-title').value = '';
+  $('prompt-text').value = '';
+  editing = null;
+  if (id) focusPrompt(id); else $('add-prompt-btn').focus();
+}
+
+async function savePrompt(event) {
+  event.preventDefault();
+  if (busy) return;
+  const title = $('prompt-title').value.trim();
+  // Whitespace can be meaningful in a reusable prompt. Only validate its presence.
+  const text = $('prompt-text').value;
+  if (!title || !text.trim()) { $('editor-error').textContent = 'Enter a title and some prompt text.'; return; }
+  const prompt = { id: editing?.id ?? crypto.randomUUID(), title, text };
+  const operation = editing ? { type: 'update', id: editing.id, expected: editing, prompt } : { type: 'create', prompt };
+  $('editor-error').textContent = '';
+  $('save-prompt').textContent = 'Saving…';
+  try {
+    await mutate(operation);
+    closeEditor();
+    feedback('Prompt saved. Ready in Spotlight.');
+  } catch (error) { $('editor-error').textContent = error.message; }
+  finally { $('save-prompt').textContent = 'Save prompt'; }
+}
+
+async function deletePrompt(prompt) {
+  if (busy) return;
+  const index = prompts.findIndex(item => item.id === prompt.id);
+  const beforeId = prompts[index + 1]?.id ?? null;
+  try {
+    await mutate({ type: 'delete', id: prompt.id, expected: prompt });
+    undo = { prompt, beforeId };
+    feedback(`Deleted “${prompt.title}”.`, { canUndo: true });
+    $('undo-delete').focus();
+  } catch (error) { feedback(error.message, { error: true }); }
+}
+
+async function reorder(id, beforeId) {
+  if (busy || beforeId === undefined) return;
+  try { await mutate({ type: 'move', id, beforeId }); focusPrompt(id); feedback('Prompt order updated.'); }
+  catch (error) { renderPrompts(); feedback(error.message, { error: true }); }
+}
+
+function clearDrag() {
+  draggedId = null;
+  for (const item of $('prompt-list').children) item.classList.remove('dragging', 'drop-target');
+}
+
+function exportJson(data, name = 'souffleur_prompts') {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+  const link = element('a');
+  link.href = url;
+  link.download = `${name}_${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function prepareImport(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    if (file.size > MAX_IMPORT_BYTES) throw new Error('Choose a JSON file smaller than 4 MB.');
+    pendingImport = parseImport(await file.text());
+    $('import-description').textContent = `${pendingImport.length} prompt${pendingImport.length === 1 ? '' : 's'} ready from “${file.name}”. Your library has ${prompts.length}.`;
+    document.querySelector('[name="import-mode"][value="merge"]').checked = true;
+    $('import-error').textContent = '';
+    $('import-dialog').showModal();
+  } catch (error) { feedback(error.message, { error: true }); }
+  finally { event.target.value = ''; }
+}
+
+async function confirmImport() {
+  if (!pendingImport || busy) return;
+  const mode = document.querySelector('[name="import-mode"]:checked').value;
+  const count = prompts.length;
+  $('confirm-import').disabled = true;
+  $('cancel-import').disabled = true;
+  $('confirm-import').textContent = 'Importing…';
+  try {
+    const state = await mutate({ type: 'import', mode, prompts: pendingImport, expectedRevision: revision });
+    pendingImport = null;
+    $('import-dialog').close();
+    $('recover-backup').hidden = mode !== 'replace' && $('recover-backup').hidden;
+    $('library-search').value = '';
+    visibleCount = PAGE_SIZE;
+    renderPrompts();
+    feedback(mode === 'merge' ? `Added ${state.prompts.length - count} prompts. Exact duplicates were skipped.` : 'Library replaced. A pre-import backup is available under Shortcuts & storage.');
+  } catch (error) { $('import-error').textContent = error.message; }
+  finally {
+    $('confirm-import').disabled = false;
+    $('cancel-import').disabled = false;
+    $('confirm-import').textContent = 'Import prompts';
+  }
+}
+
+$('add-prompt-btn').addEventListener('click', () => openEditor());
+$('cancel-edit').addEventListener('click', closeEditor);
+$('prompt-editor').addEventListener('submit', savePrompt);
+$('prompt-editor').addEventListener('keydown', event => {
+  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); $('prompt-editor').requestSubmit(); }
+  if (event.key === 'Escape' && !busy) { event.preventDefault(); closeEditor(); }
 });
+$('library-search').addEventListener('input', () => { visibleCount = PAGE_SIZE; renderPrompts(); });
+$('show-more').addEventListener('click', () => {
+  visibleCount += PAGE_SIZE;
+  renderPrompts();
+  const firstNew = $('prompt-list').children[visibleCount - PAGE_SIZE];
+  firstNew?.querySelector('button')?.focus();
+});
+$('retry-load').addEventListener('click', loadPrompts);
+$('import-prompts').addEventListener('click', () => {
+  if (draftChanged()) { feedback('Save or cancel your draft before importing.', { error: true }); return; }
+  $('import-file').click();
+});
+$('import-file').addEventListener('change', prepareImport);
+$('confirm-import').addEventListener('click', confirmImport);
+$('import-dialog').addEventListener('cancel', event => { if (busy) event.preventDefault(); });
+$('import-dialog').addEventListener('close', () => { pendingImport = null; });
+$('export-prompts').addEventListener('click', () => { exportJson(prompts); feedback('JSON export started. Keep the file somewhere safe.'); });
+$('recover-backup').addEventListener('click', async () => {
+  try {
+    const { libraryBackup } = await browserApi.storage.local.get('libraryBackup');
+    if (!libraryBackup) throw new Error('No pre-import backup is available.');
+    exportJson(libraryBackup.prompts, 'souffleur_recovery');
+    feedback('Recovery export started. Import it to restore the previous library.');
+  } catch (error) { feedback(error.message, { error: true }); }
+});
+$('dismiss-feedback').addEventListener('click', () => { $('feedback').hidden = true; undo = null; });
+$('undo-delete').addEventListener('click', async () => {
+  if (!undo || busy) return;
+  const { prompt, beforeId } = undo;
+  try {
+    await mutate({ type: 'create', prompt, beforeId: prompts.some(item => item.id === beforeId) ? beforeId : null });
+    undo = null;
+    feedback('Prompt restored.');
+    focusPrompt(prompt.id);
+  } catch (error) { feedback(error.message, { error: true, canUndo: true }); }
+});
+$('prompt-list').addEventListener('dragover', event => {
+  if (!draggedId || busy || $('library-search').value.trim()) return;
+  const row = event.target.closest('.prompt-item');
+  if (!row || row.dataset.id === draggedId) return;
+  event.preventDefault();
+  for (const item of $('prompt-list').children) item.classList.toggle('drop-target', item === row);
+});
+$('prompt-list').addEventListener('drop', event => {
+  if (!draggedId || busy) return;
+  const row = event.target.closest('.prompt-item');
+  if (!row) return;
+  event.preventDefault();
+  const after = event.clientY > row.getBoundingClientRect().top + row.offsetHeight / 2;
+  const index = prompts.findIndex(prompt => prompt.id === row.dataset.id);
+  const beforeId = after ? prompts[index + 1]?.id ?? null : row.dataset.id;
+  const id = draggedId;
+  clearDrag();
+  reorder(id, beforeId);
+});
+window.addEventListener('beforeunload', event => { if (draftChanged()) { event.preventDefault(); event.returnValue = ''; } });
+browserApi.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.library?.newValue) applyState(changes.library.newValue);
+  if (area === 'local' && changes.libraryBackup) $('recover-backup').hidden = !changes.libraryBackup.newValue;
+});
+browserApi.commands.getAll().then(commands => {
+  const shortcut = commands.find(command => command.name === 'toggle_spotlight')?.shortcut;
+  $('spotlight-shortcut').textContent = shortcut || 'Set a shortcut';
+}).catch(() => { $('spotlight-shortcut').textContent = 'Browser shortcut'; });
+browserApi.storage.local.get('libraryBackup').then(result => { $('recover-backup').hidden = !result.libraryBackup; }).catch(() => {});
+loadPrompts();

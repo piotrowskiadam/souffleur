@@ -1,11 +1,24 @@
 {
   "name": "souffleur",
-  "version": "4.7.7",
-  "description": "Unified codebase for the Souffleur browser extension.",
+  "version": "4.8.0",
+  "description": "A keyboard-first prompt library for Chrome and Firefox.",
   "scripts": {
-    "build": "node build.js"
+    "build": "node build.js",
+    "test": "node --test --experimental-test-isolation=none tests/*.test.js",
+    "test:ui": "playwright test",
+    "lint:firefox": "web-ext lint --source-dir dist/firefox --warnings-as-errors",
+    "check": "npm test && npm run build && npm run lint:firefox",
+    "package": "node scripts/package.js"
   },
   "devDependencies": {
-    "esbuild": "^0.20.2"
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.64.1",
+    "esbuild": "^0.28.2",
+    "web-ext": "^10.8.0"
+  },
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.12"
   }
 }

@@ -1,93 +1,83 @@
-# Developer Guide
+# Developer guide
 
-This document outlines the setup, build automation, and deployment instructions for developers and AI agents working on Souffleur.
+## Setup
 
----
+Use Node.js **22.12+** and npm. Both desktop browser variants are built from `src/`; do not maintain parallel copies of the application. There are no production dependencies or remote UI assets.
 
-## 🛠️ Prerequisites
-
-*   **Node.js**: Version 18 or newer (v22+ recommended).
-*   **npm**: Version 9 or newer (v11+ recommended).
-
----
-
-## 🚀 Getting Started
-
-1.  **Clone the Repository**:
-    ```bash
-    git clone https://github.com/piotrowskiadam/souffleur.git
-    cd souffleur
-    ```
-
-2.  **Install Dependencies**:
-    Install [esbuild](https://esbuild.github.io/), which is used to compile and bundle the Javascript assets:
-    ```bash
-    npm install
-    ```
-
-3.  **Build the Extensions**:
-    Compile the single-source codebase into platform-specific bundles:
-    ```bash
-    npm run build
-    ```
-    This generates the build output inside the `dist/` directory:
-    *   `dist/chrome/`: Fully bundled extension for Google Chrome.
-    *   `dist/firefox/`: Fully bundled extension for Mozilla Firefox.
-
----
-
-## 💻 Running Locally
-
-### Loading in Google Chrome
-1.  Open Chrome and navigate to `chrome://extensions`.
-2.  Enable **Developer mode** using the toggle in the top-right corner.
-3.  Click **Load unpacked** in the top-left corner.
-4.  Select the `dist/chrome/` folder.
-
-### Loading in Mozilla Firefox
-1.  Open Firefox and navigate to `about:debugging`.
-2.  Click **This Firefox** on the left menu.
-3.  Click **Load Temporary Add-on...**.
-4.  Navigate to `dist/firefox/` and select the `manifest.json` file.
-
----
-
-## 📂 Codebase Directory Structure
-
-```
-├── .github/workflows/
-│   └── deploy.yml              # CI/CD store release deployment pipeline
-├── dist/                       # Build output target folder (gitignored)
-│   ├── chrome/                 # Bundle for Google Chrome (unpacked)
-│   └── firefox/                # Bundle for Mozilla Firefox (unpacked)
-├── src/                        # Single source of truth (Source files)
-│   ├── background.js           # Unified background/service-worker script
-│   ├── content.js              # Content script with Shadow DOM style isolation
-│   ├── icons/                  # Global icon assets (PNGs)
-│   └── sidebar/
-│       ├── sidebar.css         # Sidebar UI stylesheet
-│       ├── sidebar.html        # Sidebar panel layout HTML
-│       └── sidebar.js          # Sidebar script (handles sync storage)
-├── build.js                    # Node.js builder script running esbuild compiler
-├── manifest.chrome.json        # Manifest template for Chrome
-├── manifest.firefox.json       # Manifest template for Firefox
-├── package.json                # Root package configuration and scripts
-├── LICENSE                     # Project license file
-├── ARCHITECTURE.md             # Sequence diagrams and message definitions
-└── README.md                   # Project overview and introduction
+```sh
+npm ci
+npm run check
+npx playwright install --with-deps chromium firefox
+npm run test:ui
+npm run package
 ```
 
----
+`npm run check` runs Node regression tests, a clean esbuild build, and Mozilla’s `web-ext lint` with warnings treated as errors. `npm run test:ui` starts/stops its own localhost test server. On Linux it needs the usual Playwright browser libraries. `npm run package` rebuilds both targets before packaging them with Mozilla’s tooling; it never uploads them.
 
-## 📦 Publishing & CI/CD Releases
+| Output | Use |
+| --- | --- |
+| `dist/chrome/` | Load unpacked in Chrome. Minimum version: 116. |
+| `dist/firefox/` | Load `manifest.json` temporarily in Firefox. Minimum version: 142. |
+| `artifacts/souffleur-chrome-<version>.zip` | Chrome store/upload package. |
+| `artifacts/souffleur-firefox-<version>.zip` | Unsigned Firefox package for signing/review. |
+| `playwright-report/`, `test-results/` | UI report and failure traces, ignored by Git. |
 
-Automated publishing is set up via GitHub Actions. Whenever a new release is **published** on GitHub, it automatically packages and pushes updates to the stores.
+Firefox 142 is the minimum declared for consistent support of the manifest’s explicit no-data-collection metadata across Mozilla’s compatibility checks. Souffleur targets desktop browsers, not Firefox for Android. Keep minimum versions and esbuild targets consistent when revisiting compatibility.
 
-Ensure the following secrets are configured in **Settings > Secrets and variables > Actions**:
+## Test boundaries
 
-*   `CHROME_EXTENSION_ID`: Google Chrome Web Store extension ID.
-*   `CHROME_CLIENT_ID`: Google OAuth API Client ID.
-*   `CHROME_CLIENT_SECRET`: Google OAuth API Client Secret.
-*   `CHROME_REFRESH_TOKEN`: Google OAuth API Refresh Token.
-*   `MOZILLA_JWT_ISSUER`: Mozilla Developer Hub JWT Issuer.
-*   `MOZILLA_JWT_SECRET`: Mozilla Developer Hub JWT Secret.
+- `tests/prompts.test.js`: validation, legacy imports, Unicode/literal HTML, bounded inputs, search, stable-ID moves.
+- `tests/library.test.js`: migration, empty libraries, failure recovery, queued concurrent writes, edit conflicts, merge/replacement backups, schema protection, long prompts.
+- `tests/background.test.js`: real bundled background in a VM, message authorization and both platform command adapters.
+- `tests/manifests.test.js`: versions, permission budgets and platform declarations.
+- `tests/ui/library.spec.js`: actual bundled panel and background with browser APIs replaced. Covers CRUD, failures, safe DOM rendering, import/export, narrow viewports, 200% text, axe.
+- `tests/ui/spotlight.spec.js`: actual content/background bundles on Chromium and Firefox. Covers loading races, copy failure, first selection, arrows, focus, empty states and large libraries. axe is scoped to the injected extension surface, since host-page accessibility is outside Souffleur’s control.
+- `tests/ui/extension.spec.js`: a real Chrome extension in a fresh persistent Chromium profile, real service worker/storage/message transport/content script and system clipboard. Its Firefox project is deliberately skipped: Playwright Firefox does not provide equivalent extension loading. Firefox UI tests and Mozilla’s packaging validator cover separate boundaries; they do not claim a full signed Firefox installation test.
+
+Node tests disable per-file process isolation to run consistently in development sandboxes; each repository/background test creates its own state. UI fixtures and the static server live only in `tests/` and must never ship in `dist/`. Do not use the test API replacement as production fallback behavior.
+
+For a manual Firefox release check, temporarily load the build in the actual desktop browser, open its toolbar sidebar, create/edit/reorder a prompt, trigger Spotlight on an HTTP and HTTPS page, copy/paste, and verify focus restoration. Also check reassigned shortcuts, 200% browser zoom, reduced motion, and a screen reader. Automated axe checks do not establish full WCAG conformance.
+
+## Migration and recovery
+
+Version 4.8.0 initializes `storage.local.library` from `storage.sync.prompts` once, or from starter examples only if the legacy key is absent. An empty array stays empty. The legacy sync copy is retained unchanged; it may still exist in the browser vendor’s sync service.
+
+Before changing schemas, keep the old reader/migration and test restarts and failed writes. Unknown schemas or invalid stored data must fail visibly rather than being reseeded. If a legacy library cannot be migrated, use the extension’s **background debugging console** to export its original JSON for repair:
+
+```js
+// Firefox: use browser instead of chrome if needed.
+const old = await chrome.storage.sync.get('prompts');
+console.log(JSON.stringify(old.prompts, null, 2));
+```
+
+This is an explicit troubleshooting step; application code does not log prompt content. Treat the output and any exported file as private. If local data is damaged, inspect/export `chrome.storage.local.get(['library', 'libraryBackup'])` before taking any recovery action. Never clear storage merely to resolve a UI failure.
+
+Replacing the library through import stores one prior snapshot under `libraryBackup`. Export it using **Shortcuts & storage → Export pre-import backup** and import that file to restore it. Browser profile removal/uninstallation deletes local backups too.
+
+If you explicitly want to remove the retained legacy synchronized copy **after verifying an independent export**, run `await chrome.storage.sync.remove('prompts')` in the background debugging console. Other devices still running 4.7.x can reintroduce/update their old synced library; upgrade them first. Removing that key does not erase the new local library.
+
+## Security and maintenance
+
+- Prompt data is untrusted: use `textContent` / form `.value`, never HTML interpolation.
+- Keep all library mutations in the background-owned queue. Do not write a panel’s whole cached array back to storage.
+- Content-script senders are read-only. Changes to message authorization require tests.
+- Keep full prompt bodies out of DOM attributes, logs, and error telemetry. Shadow DOM isolates styles, not secrets.
+- The 4 MiB library limit leaves headroom within browser local quotas for the replacement backup. UTF-8 JSON size is checked before every write.
+- Maintain the plain-array JSON exchange format so old exports remain usable.
+- Update manifests and `package.json` together; the build and tests reject mismatches.
+- Browser APIs and clipboard fallbacks need compatibility checks when changing minimum versions.
+
+Run `npm audit` when updating tools. At the audit date, npm reports upstream low/moderate findings in `web-ext`’s development-only validator dependencies; there is no patched compatible upstream tree for all of them. Do not apply npm’s suggested downgrade to an obsolete web-ext or force incompatible transitive major versions just to clear the report. `npm audit --omit=dev` checks the shipped dependency budget separately. These tools run on trusted repository/build files; none is bundled into the extension. Re-evaluate before the next toolchain upgrade.
+
+## CI and store releases
+
+`.github/workflows/ci.yml` validates every push/PR, runs both UI engines plus the real Chrome extension test, and uploads both ZIPs. Failure reports are retained for seven days. CI never publishes stores.
+
+`.github/workflows/deploy.yml` repeats validation and UI tests before uploading. A published GitHub release must be tagged `v<package version>` (for example `v4.8.0`). The manual workflow defaults to validation/package only; explicitly enable its **publish** input to upload. Store publication also depends on signing credentials and store approval; pushing source code does not release a store version.
+
+Required GitHub Actions secrets:
+
+- `CHROME_EXTENSION_ID`, `CHROME_CLIENT_ID`, `CHROME_CLIENT_SECRET`, `CHROME_REFRESH_TOKEN`
+- `MOZILLA_JWT_ISSUER`, `MOZILLA_JWT_SECRET`
+
+Check store listing/privacy text when changing data behavior. Download CI packages for testing before publishing a release. Never commit credentials, local browser profiles, or user prompt exports.

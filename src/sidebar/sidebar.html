@@ -1,48 +1,56 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Souffleur Prompts</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Souffleur · Prompt library</title>
     <link rel="stylesheet" href="sidebar.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100..900;1,100..900&display=swap"
-      rel="stylesheet"
-    />
   </head>
-  <body class="dracula-theme">
-    <div class="header">
-      <h1>Souffleur</h1>
-      <p class="subtitle" id="shortcut-instruction">Press shortcut to open prompt spotlight</p>
-    </div>
-    
-    <div id="add-prompt-container">
-      <button id="add-prompt-btn">Add Prompt</button>
-      <div id="add-prompt-form" style="display: none">
-        <input type="text" id="new-prompt-title" placeholder="Prompt Title" />
-        <textarea
-          id="new-prompt-text"
-          placeholder="Enter your prompt here"
-        ></textarea>
-      </div>
-    </div>
+  <body>
+    <header class="header">
+      <div class="brand"><img src="../icons/icon32.png" alt="" width="28" height="28" /><h1>Souffleur</h1></div>
+      <p class="subtitle">Your prompts, a shortcut away.</p>
+      <p class="shortcut-hint"><kbd id="spotlight-shortcut">…</kbd><span>to open Spotlight</span></p>
+    </header>
 
-    <div id="prompt-list">
-      <!-- Prompts will be dynamically inserted here -->
-    </div>
+    <main>
+      <div class="library-toolbar"><h2>Prompt library</h2><button id="add-prompt-btn" class="primary" disabled>New prompt</button></div>
+      <form id="prompt-editor" hidden aria-labelledby="editor-heading">
+        <h3 id="editor-heading">New prompt</h3>
+        <label for="prompt-title">Title</label>
+        <input id="prompt-title" type="text" maxlength="1000" required placeholder="e.g. Review my code" dir="auto" />
+        <label for="prompt-text">Prompt</label>
+        <textarea id="prompt-text" rows="7" maxlength="1048576" required placeholder="Write the prompt you want to use again…" dir="auto"></textarea>
+        <p id="editor-error" class="error-text" role="alert"></p>
+        <p class="field-hint">Keep placeholders like [your code] for the parts you change.</p>
+        <div class="form-actions"><button id="save-prompt" class="primary" type="submit">Save prompt</button><button id="cancel-edit" type="button">Cancel</button><span class="save-hint">Ctrl/⌘ + Enter</span></div>
+      </form>
 
-    <div id="import-export-buttons">
-      <button id="import-prompts">Import Prompts</button>
-      <button id="export-prompts">Export Prompts</button>
-      <input
-        type="file"
-        id="import-file"
-        accept=".json"
-        style="display: none"
-      />
-    </div>
+      <div id="load-error" class="notice" hidden><p id="load-error-text" role="alert"></p><button id="retry-load">Try again</button></div>
+      <div class="search-field"><label for="library-search" class="sr-only">Search your prompts</label><input type="search" id="library-search" placeholder="Search titles and prompt text…" disabled /></div>
+      <p id="prompt-count" class="list-caption" role="status">Loading your prompts…</p>
+      <ul id="prompt-list" aria-label="Saved prompts" aria-busy="true"></ul>
+      <button id="show-more" hidden>Show more prompts</button>
+    </main>
 
+    <footer>
+      <div class="backup-actions"><button id="import-prompts" disabled>Import JSON</button><button id="export-prompts" disabled>Export JSON</button></div>
+      <input type="file" id="import-file" accept=".json,application/json" hidden aria-label="Import prompts from JSON" />
+      <details class="help"><summary>Shortcuts &amp; storage</summary><p>Open the library from the browser toolbar. In Spotlight, use ↑ / ↓ to choose, Enter to copy, and Esc to close. Customize shortcuts in your browser’s extension settings.</p><p>Prompts are saved on this device. Export a backup before uninstalling or moving browsers. Older synced copies are kept for recovery, but no longer updated.</p><button id="recover-backup" hidden>Export pre-import backup</button></details>
+    </footer>
+
+    <div id="feedback" class="feedback" hidden><p id="status-message" role="status" aria-live="polite"></p><button id="undo-delete" hidden>Undo delete</button><button id="dismiss-feedback" aria-label="Dismiss message">Dismiss</button></div>
+
+    <dialog id="import-dialog" aria-labelledby="import-heading" aria-describedby="import-description">
+      <form method="dialog">
+        <h2 id="import-heading">Import prompts</h2>
+        <p id="import-description"></p>
+        <label class="radio-option"><input type="radio" name="import-mode" value="merge" checked /><span>Add to my library<small>Keep existing prompts. Exact duplicates are skipped.</small></span></label>
+        <label class="radio-option"><input type="radio" name="import-mode" value="replace" /><span>Replace my library<small>Save a recovery copy of the current library on this device.</small></span></label>
+        <p id="import-error" class="error-text" role="alert"></p>
+        <div class="form-actions"><button class="primary" id="confirm-import" type="button">Import prompts</button><button id="cancel-import" value="cancel">Cancel</button></div>
+      </form>
+    </dialog>
     <script src="sidebar.js"></script>
   </body>
 </html>

@@ -1,155 +1,64 @@
-console.log("Souffleur Background Service Worker starting...");
+import { browserApi, isFirefox } from './lib/browser.js';
+import { createLibrary } from './lib/library.js';
 
-// Default prompts to initialize storage with on first install.
-const INITIAL_PROMPTS = [
-  {
-    id: "tutorial-welcome",
-    title: "💡 Welcome to Souffleur!",
-    text: "Welcome to your new spatial prompt manager! Here is how to get started:\n\n1. Press Ctrl+Shift+Y (Chrome) or Ctrl+Alt+P (Firefox) to open the Side Panel/Sidebar to add, edit, or import prompts.\n2. Open this Spotlight Search overlay on any webpage by pressing Ctrl+Shift+U (Chrome) or Ctrl+Alt+1 (Firefox).\n3. Type to filter your prompts, use Arrow keys to navigate, and press Enter to instantly copy to your clipboard.\n\nTry it now: select this prompt and press Enter to copy it!"
-  },
-  {
-    id: "example-code-review",
-    title: "📝 Example: Code Review Template",
-    text: "Act as a senior software engineer. Review the following code for security vulnerabilities, style issues, and performance bottlenecks. Suggest concrete refactoring changes:\n\n[insert your code here]"
-  }
-];
+const library = createLibrary(browserApi.storage);
+// Content scripts use messaging, rather than reading extension storage directly.
+browserApi.storage.local.setAccessLevel?.({ accessLevel: 'TRUSTED_CONTEXTS' })
+  .catch(error => console.error('Souffleur storage access:', error.message));
 
-const browserApi = typeof browser !== 'undefined' ? browser : chrome;
-const isFirefox = typeof browser !== 'undefined' && typeof browser.sidebarAction !== 'undefined';
-
-/**
- * Initializes storage with default prompts if none exist.
- * Also sets up the Chrome side panel behavior on install/update.
- * @param {object} details - Information about the installation or update event.
- */
-function handleInstallOrUpdate(details) {
-  console.log("Extension installed or updated:", details.reason);
-
-  browserApi.storage.sync.get("prompts")
-    .then((result) => {
-      if (!result.prompts || result.prompts.length === 0) {
-        console.log("No prompts found or empty array, initializing with default prompts:", INITIAL_PROMPTS);
-        return browserApi.storage.sync.set({ prompts: INITIAL_PROMPTS });
-      } else {
-        console.log("Existing prompts found in storage:", result.prompts);
-      }
-    })
-    .then(() => {
-      console.log("Storage initialization complete.");
-    })
-    .catch((error) => {
-      console.error("Error during storage initialization:", error);
-    });
-
-  // Setup Chrome Side Panel Behavior (Run on install/update)
-  if (!isFirefox && browserApi.sidePanel) {
-    console.log("Setting up Chrome side panel behavior...");
-    browserApi.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
-      .then(() => console.log("Successfully set side panel behavior for action click."))
-      .catch((error) => console.error("Error setting side panel behavior:", error));
-  }
+function configureSidePanel() {
+  browserApi.sidePanel?.setPanelBehavior({ openPanelOnActionClick: true })
+    .catch(error => console.error('Souffleur side panel:', error.message));
 }
 
-/**
- * Handles incoming messages from content scripts or other extension pages.
- * @param {object} request - The message payload.
- * @param {object} sender - Information about the message sender.
- * @param {function} sendResponse - Callback function to send a response asynchronously.
- * @returns {boolean|undefined} Returns true if sendResponse will be called asynchronously.
- */
-function handleMessage(request, sender, sendResponse) {
-  console.log("Message received in background:", request);
+browserApi.runtime.onInstalled.addListener(() => {
+  library.get().catch(error => console.error('Souffleur initialization:', error.message));
+  configureSidePanel();
+});
+configureSidePanel();
 
-  if (request.action === "getPrompts") {
-    console.log("Handling getPrompts request from storage.sync...");
-    browserApi.storage.sync.get("prompts")
-      .then((result) => {
-        sendResponse({ prompts: result.prompts || [] });
-      })
-      .catch((error) => {
-        console.error("Error retrieving prompts:", error);
-        sendResponse({ prompts: [], error: error.message });
-      });
-    return true; // Keep message channel open for asynchronous response
+browserApi.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (sender.id !== browserApi.runtime.id || !message || typeof message !== 'object') return;
+  const panelUrl = browserApi.runtime.getURL('sidebar/sidebar.html');
+  const fromPanel = sender.url?.split(/[?#]/)[0] === panelUrl;
+  let task;
+  if (message.action === 'getPrompts') task = library.get().then(state => ({ prompts: state.prompts, revision: state.revision }));
+  // Only our extension page may mutate the library; content scripts are read-only.
+  if (message.action === 'mutateLibrary' && fromPanel && message.operation) {
+    task = library.mutate(message.operation).then(state => ({ prompts: state.prompts, revision: state.revision }));
   }
-}
+  if (!task) return;
+  task.then(sendResponse, error => sendResponse({ error: error.message }));
+  return true; // Compatible callback response for Chrome workers and Firefox backgrounds.
+});
 
-/**
- * Handles keyboard shortcut commands.
- * Tries to toggle the Firefox sidebar or open the Chrome side panel.
- * @param {string} windowId - The ID of the window where the command was triggered.
- */
-async function handleCommandToggle(windowId) {
+async function toggleSpotlight(tab) {
+  const active = tab?.id ? tab : (await browserApi.tabs.query({ active: true, currentWindow: true }))[0];
+  if (!active?.id) return;
   try {
-    if (isFirefox) {
-      console.log("Toggling Firefox sidebar via command.");
-      await browserApi.sidebarAction.toggle();
-    } else if (browserApi.sidePanel) {
-      console.log(`Attempting to open Chrome side panel via command for window: ${windowId}`);
-      if (windowId) {
-        await browserApi.sidePanel.open({ windowId });
-      } else {
-        await browserApi.sidePanel.open({});
-      }
-    }
-  } catch (error) {
-    console.error("Error handling command toggle:", error);
+    await browserApi.tabs.sendMessage(active.id, { action: 'toggleSpotlight' });
+    await browserApi.action.setBadgeText({ text: '', tabId: active.id });
+    await browserApi.action.setTitle({ title: 'Open Souffleur prompt library', tabId: active.id });
+  } catch {
+    await browserApi.action.setBadgeText({ text: '!', tabId: active.id });
+    await browserApi.action.setTitle({ title: 'Spotlight is unavailable here. Open a regular webpage or reload it after an update.', tabId: active.id });
   }
 }
 
-/**
- * Handles keyboard shortcut commands defined in the manifest.
- * @param {string} command - The name of the command that was triggered.
- * @param {object} tab - Information about the tab where the command was triggered.
- */
-function handleCommand(command, tab) {
-  console.log(`BACKGROUND: Command received: ${command}`, tab);
-
-  if (command === "toggle_sidebar") {
-    console.log("BACKGROUND: Handling toggle_sidebar command.");
-    const windowId = tab ? tab.windowId : null;
-    handleCommandToggle(windowId);
+browserApi.commands.onCommand.addListener((command, tab) => {
+  if (command === 'toggle_spotlight') {
+    toggleSpotlight(tab).catch(error => console.error('Souffleur Spotlight:', error.message));
+  } else if (command === 'toggle_sidebar') {
+    // Invoke directly in the command callback to retain the browser user gesture.
+    const task = isFirefox
+      ? browserApi.sidebarAction.toggle()
+      : browserApi.sidePanel.open(tab?.windowId !== undefined ? { windowId: tab.windowId } : { windowId: browserApi.windows.WINDOW_ID_CURRENT });
+    task.catch(error => console.error('Souffleur panel:', error.message));
   }
+});
 
-  if (command === "toggle_spotlight") {
-    console.log("BACKGROUND: Handling toggle_spotlight command.");
-    browserApi.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-      console.log("BACKGROUND: Found active tab:", tabs[0]?.id);
-      if (tabs[0] && tabs[0].id) {
-        const tabId = tabs[0].id;
-        console.log(`BACKGROUND: Sending toggleSpotlight to tab ${tabId}`);
-        browserApi.tabs.sendMessage(tabId, { action: "toggleSpotlight" })
-          .then(() => {
-             console.log(`BACKGROUND: Successfully sent toggleSpotlight to tab ${tabId}`);
-          })
-          .catch(error => {
-            console.error(`BACKGROUND: Error sending toggleSpotlight message to tab ${tabId}:`, error);
-            console.warn("BACKGROUND: This error usually means the content script is not injected in this page.");
-          });
-      } else {
-        console.error("Could not find active tab to send message.");
-      }
-    }).catch(error => console.error("Error querying tabs:", error));
-  }
-}
-
-// --- Register Listeners ---
-browserApi.runtime.onInstalled.addListener(handleInstallOrUpdate);
-browserApi.runtime.onMessage.addListener(handleMessage);
-browserApi.commands.onCommand.addListener(handleCommand);
-
-// Firefox-specific listener: Toggle sidebar when extension action toolbar button is clicked
 if (isFirefox) {
   browserApi.action.onClicked.addListener(() => {
-    browserApi.sidebarAction.toggle().catch((err) => console.error("Error toggling sidebar on action click:", err));
+    browserApi.sidebarAction.toggle().catch(error => console.error('Souffleur panel:', error.message));
   });
 }
-
-// Diagnostic command logger to check registered shortcuts on startup
-browserApi.commands.getAll()
-  .then((commands) => {
-    console.log("BACKGROUND: Currently registered extension commands:", commands);
-  })
-  .catch((err) => console.error("BACKGROUND: Failed to retrieve commands:", err));
-
-console.log("Background script setup complete. Listening for events.");
