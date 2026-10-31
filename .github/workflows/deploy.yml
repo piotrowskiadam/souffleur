@@ -1,49 +1,77 @@
-name: Deploy Extensions to Web Stores
+name: Deploy extensions to web stores
 
 on:
   release:
     types: [published]
-  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Upload to both stores (otherwise only validate and package)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: extension-store-deploy
+  cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: Package and Deploy Extensions
+  validate:
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Read package version
+        id: version
+        run: node --input-type=module -e "import fs from 'node:fs'; console.log('version='+JSON.parse(fs.readFileSync('package.json')).version)" >> "$GITHUB_OUTPUT"
+      - name: Check release version
+        if: github.event_name == 'release'
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: node --input-type=module -e "import fs from 'node:fs'; const {version}=JSON.parse(fs.readFileSync('package.json')); if(process.env.RELEASE_TAG !== 'v'+version) throw new Error('Release tag must match package and manifest versions');"
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium firefox
+      - run: npm run test:ui
+      - run: npm run package
+      - uses: actions/upload-artifact@v7
+        with:
+          name: store-packages
+          path: artifacts/*.zip
 
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Build Extensions
-        run: npm run build
-
-      - name: Zip Chrome Extension
-        run: |
-          cd dist/chrome
-          zip -r ../../souffleur-chrome.zip .
-          cd ../..
-
+  publish:
+    needs: validate
+    if: github.event_name == 'release' || inputs.publish == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/download-artifact@v8
+        with:
+          name: store-packages
+          path: artifacts
       - name: Upload to Chrome Web Store
         uses: mnao305/chrome-extension-upload@v5.0.0
         with:
-          file-path: souffleur-chrome.zip
+          file-path: artifacts/souffleur-chrome-${{ needs.validate.outputs.version }}.zip
           extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
           client-id: ${{ secrets.CHROME_CLIENT_ID }}
           client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
           refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
-
-      - name: Package & Publish to Mozilla Add-ons
-        uses: kewisch/action-web-ext@v1
-        with:
-          cmd: sign
-          source: ./dist/firefox
-          apiKey: ${{ secrets.MOZILLA_JWT_ISSUER }}
-          apiSecret: ${{ secrets.MOZILLA_JWT_SECRET }}
-          channel: listed
+      - name: Publish to Mozilla Add-ons
+        run: npx web-ext sign --source-dir dist/firefox --channel listed
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.MOZILLA_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.MOZILLA_JWT_SECRET }}

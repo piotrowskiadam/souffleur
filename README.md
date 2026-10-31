@@ -1,73 +1,75 @@
-<p align="center">
-  <img src="src/icons/icon128.png" alt="Souffleur Logo" width="128" height="128" />
-</p>
-
+<p align="center"><img src="src/icons/icon128.png" alt="Souffleur" width="96" height="96" /></p>
 <h1 align="center">Souffleur</h1>
+<p align="center">Your prompts, a shortcut away.</p>
 
----
+A small, keyboard-first prompt library for desktop **Chrome and Firefox**. Save the prompts you reuse, find them in a Spotlight-style overlay, and copy them without leaving your conversation.
 
-<p align="center">
-  <b>A Spotlight-like prompt manager for LLMs. Access, organize, and copy your AI prompts instantly, browser-wide.</b>
-</p>
+[Get it for Firefox](https://addons.mozilla.org/en-US/firefox/addon/souffleur/) · [Get it for Chrome](https://chromewebstore.google.com/detail/souffleur/jpencajlhojahjjokfkjbjnchdbacpfn) · [Support development](https://ko-fi.com/B5Z022ZL32)
 
-<p align="center">
-  <a href="https://addons.mozilla.org/en-US/firefox/addon/souffleur/">
-    <img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" alt="Get the Add-on for Firefox" height="50">
-  </a>
-  &nbsp;&nbsp;
-  <a href="https://chromewebstore.google.com/detail/souffleur/jpencajlhojahjjokfkjbjnchdbacpfn">
-    <img src="https://developer.chrome.com/static/docs/webstore/branding/image/HRs9MPufa1J1h5glNhut.png" alt="Get it on Chrome Web Store" height="50">
-  </a>
-</p>
+## Use Souffleur
 
-<p align="center">
-  <a href="https://ko-fi.com/B5Z022ZL32">
-    <img src="https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_blue.png" alt="Support me on Ko-fi" height="36">
-  </a>
-</p>
+1. Click the extension icon to open your prompt library in the browser side panel.
+2. Choose **New prompt**, add a title and prompt text, then **Save prompt**. Cancel or Esc leaves the library unchanged. Ctrl/⌘ + Enter saves while editing.
+3. Open Spotlight on a regular webpage. Type words from the title or body, use ↑ / ↓, and press Enter to copy. The first result is ready to copy immediately.
+4. Paste into your chat. Spotlight restores focus to the field you were using.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Platform-Chrome%20%7C%20Firefox-blue?style=flat-square&logo=googlechrome&logoColor=white" alt="Platform" />
-  <img src="https://img.shields.io/badge/Manifest-V3-orange?style=flat-square" alt="Manifest V3" />
-  <img src="https://img.shields.io/badge/Language-JavaScript-yellow?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript" />
-  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License MIT" />
-</p>
+| Action | Chrome default | Firefox default |
+| --- | --- | --- |
+| Open Spotlight | Ctrl + Shift + U | Ctrl + Alt + 1 |
+| Open library / toggle Firefox sidebar | Ctrl + Shift + Y | Ctrl + Alt + P |
 
-Souffleur is a lightweight, keyboard-centric browser extension designed for developers, researchers, and AI power users. It streamlines prompt management by bringing a fast, Spotlight-style interface directly to any web page, ensuring your flow is never interrupted.
+The library displays the **actual assigned Spotlight shortcut**, including custom bindings. If a shortcut is unavailable or conflicts with the OS, assign it in `chrome://extensions/shortcuts` or Firefox’s Add-ons Manager → Manage Extension Shortcuts. macOS may display Command for Ctrl-based bindings.
 
-## Why Souffleur?
+Browser settings pages, extension stores, built-in PDF viewers, and other privileged pages may block Spotlight. Use the library there instead, or switch to a regular webpage. Reload an already-open webpage after an extension update.
 
-Most prompt managers are clunky, require navigating away from your chat window, or force you to copy-paste between multiple tabs. **Souffleur is different:**
+## Organize and back up
 
-- **Spotlight at your Fingertips**: Press `Ctrl+Alt+1` (Firefox) or `Ctrl+Shift+U` (Chrome) to open a macOS-style search overlay instantly. Search and select prompts entirely from your keyboard.
-- **Chatbot Agnostic**: Works seamlessly across ChatGPT, Claude, Gemini, local LLM interfaces, or any text field on the web.
-- **Side Panel Organization**: Manage, edit, and organize your prompts in a clean, native sidebar (Firefox) or side panel (Chrome) that stays open alongside your workspace.
-- **Zero-Friction Clipboard Integration**: Select a prompt, and it's instantly copied to your clipboard while the overlay closes automatically, letting you paste and continue your flow.
+- Search titles and full prompt text in either surface. Search ignores case and decomposable accents, and matches all entered words.
+- Use **More → Move up / Move down**, or drag a prompt’s title when the library is unfiltered.
+- Delete a prompt and choose **Undo delete** to restore it. Undo stays available until dismissed or replaced by another action; it is not a durable backup.
+- **Export JSON** downloads the complete library, including prompts hidden by search.
+- **Import JSON** validates the entire file before saving. The default adds prompts and skips exact title/text duplicates. You can choose to replace the library instead; **Shortcuts & storage → Export pre-import backup** retrieves the previous library. Only the most recent replacement backup is retained.
 
-## Core Features
+The interchange format remains compatible with older Souffleur exports:
 
-- **macOS Spotlight-like Overlay**: Access your entire prompt library instantly from anywhere on the web.
-- **Side Panel & Sidebar Integration**: Add, edit, delete, and reorder prompts via the Chrome Side Panel or Firefox Sidebar.
-- **Clipboard Sync**: Instantly copy selected prompts to your clipboard for easy pasting into any LLM textbox.
-- **Import & Export**: Effortlessly backup and sync your prompts using simple JSON files.
-- **Focus Preservation**: Focus returns automatically to your active text field after copying a prompt.
-- **Privacy First**: Everything is stored locally on your device. No analytics, tracking, or cloud syncing.
+```json
+[
+  {
+    "id": "optional-stable-id",
+    "title": "Code review",
+    "text": "Review this code for correctness and security:\n\n[your code]"
+  }
+]
+```
 
-## 📦 Versions & Implementation
+Missing or duplicate IDs are repaired during import. Text is preserved literally, including HTML, Unicode, and leading/trailing whitespace. A file must be at most 8 MiB (allowing formatted exports to round-trip); the resulting library must fit within 4 MiB of UTF-8 JSON, with at most 5,000 prompts. Titles allow 1,000 characters and each prompt body 1,048,576 characters. A rejected import leaves the library intact.
 
-Due to architectural differences in Manifest V3 implementations between Firefox and Google Chrome (specifically regarding background service workers and side panel APIs), the codebase is organized into two dedicated subdirectories:
+## Storage and privacy
 
-- **[souffleur_chrome](file:///home/adampiotrowski/Desktop/Projekty%20programistyczne/souffleur/souffleur_chrome)**: Built for Google Chrome. Uses Manifest V3 background service workers and the native `sidePanel` API.
-- **[souffleur_firefox](file:///home/adampiotrowski/Desktop/Projekty%20programistyczne/souffleur/souffleur_firefox)**: Built for Mozilla Firefox. Uses Manifest V3 compatible background scripts and the native `sidebarAction` API.
+As of **4.8.0**, the library is stored in `storage.local` on this device. There is no ongoing cloud synchronization, account, analytics, or remote font request. Export/import moves your library between browsers or devices. Uninstalling the extension or deleting its browser profile removes its local data: keep a separate JSON backup.
 
-Please refer to the `README.md` within each folder for specific installation instructions and configuration options:
-- [Chrome Installation Guide](file:///home/adampiotrowski/Desktop/Projekty%20programistyczne/souffleur/souffleur_chrome/README.md)
-- [Firefox Installation Guide](file:///home/adampiotrowski/Desktop/Projekty%20programistyczne/souffleur/souffleur_firefox/README.md)
+On the first use after upgrading from 4.7.x, Souffleur copies the old `storage.sync.prompts` array to local storage, including an intentionally empty library. The original synced copy is retained for recovery and is **no longer updated**; data already synced by your browser is not deleted from its sync service. See [migration and recovery](DEVELOPERS.md#migration-and-recovery).
+
+The content script runs on eligible webpages so the shortcut can open Spotlight. It creates no overlay and fetches no library until you request it. Prompt previews become part of the page’s DOM while Spotlight is open; Shadow DOM isolates styles, **not confidential data from that page**. Avoid opening sensitive prompts on untrusted sites. Prompt text is never interpreted as HTML. Clipboard contents are shared with the operating system when you choose to copy.
+
+## Build from source
+
+Requires **Node.js 22.12+**, Chrome **116+**, or desktop Firefox **142+**.
+
+```sh
+npm ci
+npm run check
+npm run package
+```
+
+Load `dist/chrome/` with **Load unpacked** in `chrome://extensions`, or select `dist/firefox/manifest.json` in `about:debugging` → **This Firefox** → **Load Temporary Add-on**. Temporary Firefox installations disappear on restart. ZIPs are written to `artifacts/`; Firefox store distribution still requires Mozilla signing.
+
+[Developer guide](DEVELOPERS.md) · [Architecture](ARCHITECTURE.md) · [Design system](DESIGN.md) · [Audit and verification](docs/AUDIT-2026-10-31.md) · [Changelog](CHANGELOG.md)
 
 ## Contributing
 
-Contributions are welcome! If you'd like to improve Souffleur, please fork the repository and submit a pull request targetting the appropriate subdirectory. Feel free to open an issue to discuss major changes beforehand.
+Both browsers use the same `src/` code. Change the appropriate manifest only for platform-specific behavior, add a regression test for data/interaction changes, and run the checks in the developer guide. Do not commit build output or prompt backups.
 
 ## License
 
-This project is licensed under the MIT License. See the respective subdirectory `LICENSE` files for detailed terms.
+[MIT](LICENSE).
