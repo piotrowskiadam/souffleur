@@ -243,7 +243,7 @@ async function prepareImport(event) {
   const file = event.target.files?.[0];
   if (!file) return;
   try {
-    if (file.size > MAX_IMPORT_BYTES) throw new Error('Choose a JSON file smaller than 4 MB.');
+    if (file.size > MAX_IMPORT_BYTES) throw new Error('Choose a JSON file smaller than 8 MB.');
     pendingImport = parseImport(await file.text());
     $('import-description').textContent = `${pendingImport.length} prompt${pendingImport.length === 1 ? '' : 's'} ready from “${file.name}”. Your library has ${prompts.length}.`;
     document.querySelector('[name="import-mode"][value="merge"]').checked = true;

@@ -42,7 +42,7 @@ The interchange format remains compatible with older Souffleur exports:
 ]
 ```
 
-Missing or duplicate IDs are repaired during import. Text is preserved literally, including HTML, Unicode, and leading/trailing whitespace. A file must be at most 4 MiB; the resulting library must fit within 4 MiB of UTF-8 JSON, with at most 5,000 prompts. Titles allow 1,000 characters and each prompt body 1,048,576 characters. A rejected import leaves the library intact.
+Missing or duplicate IDs are repaired during import. Text is preserved literally, including HTML, Unicode, and leading/trailing whitespace. A file must be at most 8 MiB (allowing formatted exports to round-trip); the resulting library must fit within 4 MiB of UTF-8 JSON, with at most 5,000 prompts. Titles allow 1,000 characters and each prompt body 1,048,576 characters. A rejected import leaves the library intact.
 
 ## Storage and privacy
 

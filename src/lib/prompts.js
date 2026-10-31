@@ -1,5 +1,5 @@
 export const SCHEMA_VERSION = 1;
-export const MAX_IMPORT_BYTES = 4 * 1024 * 1024;
+export const MAX_IMPORT_BYTES = 8 * 1024 * 1024;
 export const MAX_LIBRARY_BYTES = 4 * 1024 * 1024;
 export const MAX_PROMPTS = 5000;
 export const MAX_TITLE_LENGTH = 1000;
@@ -49,7 +49,7 @@ export function validatePrompts(value, { repairIds = false, createId = () => cry
 }
 
 export function parseImport(text) {
-  if (new TextEncoder().encode(text).byteLength > MAX_IMPORT_BYTES) throw new Error('Choose a JSON file smaller than 4 MB.');
+  if (new TextEncoder().encode(text).byteLength > MAX_IMPORT_BYTES) throw new Error('Choose a JSON file smaller than 8 MB.');
   let value;
   try { value = JSON.parse(text); } catch { throw new Error('This file is not valid JSON. Choose a Souffleur JSON export.'); }
   return validatePrompts(value, { repairIds: true });

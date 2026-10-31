@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { MAX_IMPORT_BYTES, MAX_PROMPTS, MAX_TITLE_LENGTH, movePrompt, parseImport, searchPrompts, validatePrompts } from '../src/lib/prompts.js';
+import { MAX_IMPORT_BYTES, MAX_LIBRARY_BYTES, MAX_TEXT_LENGTH, byteLength, MAX_PROMPTS, MAX_TITLE_LENGTH, movePrompt, parseImport, searchPrompts, validatePrompts } from '../src/lib/prompts.js';
 
 const a = { id: 'a', title: 'Résumé review', text: '  Review café code.\n\nKeep whitespace.  ' };
 const b = { id: 'b', title: '説明', text: '🙂 مرحبا 世界' };
@@ -26,7 +26,7 @@ test('an invalid import fails entirely instead of dropping entries', () => {
 });
 
 test('import limits bound parsing, record count and title length', () => {
-  assert.throws(() => parseImport(' '.repeat(MAX_IMPORT_BYTES + 1)), /smaller than 4 MB/);
+  assert.throws(() => parseImport(' '.repeat(MAX_IMPORT_BYTES + 1)), /smaller than 8 MB/);
   assert.throws(() => validatePrompts(Array(MAX_PROMPTS + 1).fill(a)), /up to 5000/);
   assert.throws(() => validatePrompts([{ ...a, title: 'a'.repeat(MAX_TITLE_LENGTH + 1) }]), /titles can have/);
 });
@@ -46,4 +46,15 @@ test('reordering uses stable IDs and does not mutate its input', () => {
   assert.deepEqual(original, [a, b]);
   assert.throws(() => movePrompt(original, 'missing', null), /removed/);
   assert.throws(() => movePrompt(original, 'a', 'missing'), /library changed/);
+});
+
+
+test('a formatted export near the library byte limit can be imported again', () => {
+  const base = Array.from({ length: 4 }, (_, index) => ({ id: String(index), title: 'Large prompt', text: 'x'.repeat(MAX_TEXT_LENGTH - 1000) }));
+  const last = { id: 'last', title: 'Last prompt', text: '' };
+  last.text = 'y'.repeat(MAX_LIBRARY_BYTES - byteLength([...base, last]) - 8);
+  const library = validatePrompts([...base, last]);
+  const exported = JSON.stringify(library, null, 2);
+  assert.ok(new TextEncoder().encode(exported).byteLength > MAX_LIBRARY_BYTES);
+  assert.deepEqual(parseImport(exported), library);
 });
