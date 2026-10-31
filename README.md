@@ -4,7 +4,21 @@
 
 A small, keyboard-first prompt library for desktop **Chrome and Firefox**. Save the prompts you reuse, find them in a Spotlight-style overlay, and copy them without leaving your conversation.
 
-[Get it for Firefox](https://addons.mozilla.org/en-US/firefox/addon/souffleur/) · [Get it for Chrome](https://chromewebstore.google.com/detail/souffleur/jpencajlhojahjjokfkjbjnchdbacpfn) · [Support development](https://ko-fi.com/B5Z022ZL32)
+<p align="center">
+  <a href="https://addons.mozilla.org/en-US/firefox/addon/souffleur/">
+    <img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" alt="Get the Add-on for Firefox" height="50">
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://chromewebstore.google.com/detail/souffleur/jpencajlhojahjjokfkjbjnchdbacpfn">
+    <img src="https://developer.chrome.com/static/docs/webstore/branding/image/HRs9MPufa1J1h5glNhut.png" alt="Get it on Chrome Web Store" height="50">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://ko-fi.com/B5Z022ZL32">
+    <img src="https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_blue.png" alt="Support me on Ko-fi" height="36">
+  </a>
+</p>
 
 ## Use Souffleur
 
