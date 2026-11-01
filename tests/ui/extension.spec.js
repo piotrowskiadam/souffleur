@@ -14,9 +14,15 @@ test('real Chrome extension migrates, edits, isolates storage and copies from a 
   try {
     const worker = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker');
     const id = new URL(worker.url()).host;
+    // Real registration catches browser-reserved shortcuts that a UI mock cannot.
+    const commands = await worker.evaluate(async () => (await chrome.commands.getAll())
+      .filter(command => ['toggle_spotlight', 'toggle_sidebar'].includes(command.name)));
+    expect(commands).toHaveLength(2);
+    for (const command of commands) expect(command.shortcut, `Chrome did not register ${command.name}`).toBeTruthy();
     const panel = await context.newPage();
     await panel.goto(`chrome-extension://${id}/sidebar/sidebar.html`);
     await expect(panel.locator('#add-prompt-btn')).toBeEnabled();
+    await expect(panel.locator('#spotlight-shortcut')).toHaveText(/\.$/);
     await worker.evaluate(async () => {
       await chrome.storage.sync.set({ prompts: [{ id: 'legacy', title: 'Migrated legacy prompt', text: 'Legacy text\n  preserved' }] });
       await chrome.storage.local.remove('library');

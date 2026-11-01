@@ -27,16 +27,16 @@ A small, keyboard-first prompt library for desktop **Chrome and Firefox**. Save 
 3. Open Spotlight on a regular webpage. Type words from the title or body, use ↑ / ↓, and press Enter to copy. The first result is ready to copy immediately.
 4. Paste into your chat. Spotlight restores focus to the field you were using.
 
-| Action | Chrome default | Firefox on Linux | Firefox on Windows/macOS |
-| --- | --- | --- | --- |
-| Open Spotlight | Ctrl + Shift + U | Ctrl + Shift + . | Ctrl + Alt + 1 |
-| Open library / toggle Firefox sidebar | Ctrl + Shift + Y | Ctrl + Shift + , | Ctrl + Alt + P |
+| Action | Chrome and Firefox (Linux/Windows) | macOS |
+| --- | --- | --- |
+| Open Spotlight | Ctrl + Shift + . | Command + Shift + . |
+| Open library / toggle Firefox sidebar | Ctrl + Shift + , | Command + Shift + , |
 
-The new Linux defaults are prepared for the next release. To use them with Firefox 4.8.0 now, open `about:addons` → gear menu → **Manage Extension Shortcuts**, find **Souffleur**, and assign the two combinations above. Hold Ctrl and Shift and press the comma or period key.
+These shared defaults are prepared for the next release. To use them with 4.8.0 now, open `chrome://extensions/shortcuts` in Chrome, or `about:addons` → gear menu → **Manage Extension Shortcuts** in Firefox, find **Souffleur**, and assign the two combinations above. Hold Ctrl (Command on macOS) and Shift and press the comma or period key.
 
-Existing custom assignments take precedence over suggested defaults. If Firefox keeps an older binding, change it in the same manager. These defaults avoid known Firefox/GNOME bindings, but another extension, desktop customization or webpage can still use them. See [the shortcut research](docs/KEYBOARD-SHORTCUTS.md) for the rationale and checked sources.
+Chrome does not allow Ctrl + Alt in one extension shortcut because of AltGr conflicts. The shared pair uses Ctrl + Shift, which both browsers accept. See [the shortcut research](docs/KEYBOARD-SHORTCUTS.md) for checked sources and platform limits.
 
-The library displays the **actual assigned Spotlight shortcut**, including custom bindings. If a shortcut is unavailable or conflicts with the OS, assign it in `chrome://extensions/shortcuts` or Firefox’s Add-ons Manager → Manage Extension Shortcuts. macOS may display Command for Ctrl-based bindings.
+The library displays the **actual assigned Spotlight shortcut**, including custom bindings. Existing custom assignments take precedence over suggested defaults. If the browser keeps an older binding or another extension uses it, change it in the same shortcut manager.
 
 Browser settings pages, extension stores, built-in PDF viewers, and other privileged pages may block Spotlight. Use the library there instead, or switch to a regular webpage. Reload an already-open webpage after an extension update.
 

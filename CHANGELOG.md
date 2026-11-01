@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Suggest Ctrl+Shift+Period for Spotlight and Ctrl+Shift+Comma for the library on Firefox/Linux. Avoid the previous Ctrl+Alt+P PDF presentation conflict; retain user-assigned shortcuts and document manual reassignment for existing installs.
+- Use the same Ctrl+Shift+Period (Spotlight) and Ctrl+Shift+Comma (library) defaults in Chrome and Firefox; macOS maps Ctrl to Command. Avoid Chrome’s Ctrl+Alt restriction, Linux Unicode input on Ctrl+Shift+U, and the previous Firefox Ctrl+Alt+P PDF presentation conflict. Preserve user-assigned shortcuts and document manual reassignment for existing installs.
 
 ## 4.8.0 — 2026-10-31
 
