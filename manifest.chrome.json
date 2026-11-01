@@ -36,13 +36,13 @@
   "commands": {
     "toggle_sidebar": {
       "suggested_key": {
-        "default": "Ctrl+Shift+Y"
+        "default": "Ctrl+Shift+Comma"
       },
       "description": "Open Souffleur prompt library"
     },
     "toggle_spotlight": {
       "suggested_key": {
-        "default": "Ctrl+Shift+U"
+        "default": "Ctrl+Shift+Period"
       },
       "description": "Toggle Souffleur spotlight"
     }

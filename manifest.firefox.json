@@ -44,15 +44,13 @@
   "commands": {
     "toggle_sidebar": {
       "suggested_key": {
-        "default": "Ctrl+Alt+P",
-        "linux": "Ctrl+Shift+Comma"
+        "default": "Ctrl+Shift+Comma"
       },
       "description": "Toggle Souffleur sidebar"
     },
     "toggle_spotlight": {
       "suggested_key": {
-        "default": "Ctrl+Alt+1",
-        "linux": "Ctrl+Shift+Period"
+        "default": "Ctrl+Shift+Period"
       },
       "description": "Toggle Souffleur spotlight"
     }
