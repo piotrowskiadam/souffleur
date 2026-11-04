@@ -32,7 +32,7 @@ A small, keyboard-first prompt library for desktop **Chrome and Firefox**. Save 
 | Open Spotlight | Ctrl + Shift + . | Command + Shift + . |
 | Open library / toggle Firefox sidebar | Ctrl + Shift + , | Command + Shift + , |
 
-These shared defaults are prepared for the next release. To use them with 4.8.0 now, open `chrome://extensions/shortcuts` in Chrome, or `about:addons` → gear menu → **Manage Extension Shortcuts** in Firefox, find **Souffleur**, and assign the two combinations above. Hold Ctrl (Command on macOS) and Shift and press the comma or period key.
+These shared defaults ship in 4.8.1. On earlier versions, open `chrome://extensions/shortcuts` in Chrome, or `about:addons` → gear menu → **Manage Extension Shortcuts** in Firefox, find **Souffleur**, and assign the two combinations above. Hold Ctrl (Command on macOS) and Shift and press the comma or period key.
 
 Chrome does not allow Ctrl + Alt in one extension shortcut because of AltGr conflicts. The shared pair uses Ctrl + Shift, which both browsers accept. See [the shortcut research](docs/KEYBOARD-SHORTCUTS.md) for checked sources and platform limits.
 

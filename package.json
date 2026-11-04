@@ -1,6 +1,6 @@
 {
   "name": "souffleur",
-  "version": "4.8.0",
+  "version": "4.8.1",
   "description": "A keyboard-first prompt library for Chrome and Firefox.",
   "scripts": {
     "build": "node build.js",

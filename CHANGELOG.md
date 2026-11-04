@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## 4.8.1 — 2026-11-04
 
+- Refresh the app icon and logo with the new cyan-and-purple artwork, regenerating every bundled icon size and the README mark.
 - Use the same Ctrl+Shift+Period (Spotlight) and Ctrl+Shift+Comma (library) defaults in Chrome and Firefox; macOS maps Ctrl to Command. Avoid Chrome’s Ctrl+Alt restriction, Linux Unicode input on Ctrl+Shift+U, and the previous Firefox Ctrl+Alt+P PDF presentation conflict. Preserve user-assigned shortcuts and document manual reassignment for existing installs.
 
 ## 4.8.0 — 2026-10-31

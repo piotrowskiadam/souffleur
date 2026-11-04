@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Souffleur",
-  "version": "4.8.0",
+  "version": "4.8.1",
   "description": "Save, organize, and copy reusable AI prompts with a Spotlight-like search. Stored locally on your device.",
   "permissions": [
     "storage",
