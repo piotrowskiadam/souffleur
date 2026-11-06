@@ -22,11 +22,21 @@ A small, keyboard-first prompt library for desktop **Chrome and Firefox**. Save 
 
 ## See it in action
 
-![Souffleur Spotlight searching for “summarize” with “Summarize meeting notes” selected](media/demo/spotlight.png)
+<p align="center">
+  <img src="media/demo/spotlight-demo.gif" alt="Souffleur demo showing Spotlight search, keyboard selection, and pasting a saved prompt into a draft" width="960" />
+</p>
 
-Find a saved prompt with Spotlight, press **Enter** to copy it, then paste it into your draft. The demo uses sample prompts in a fictional chat.
+Find a saved prompt with Spotlight, press **Enter** to copy it, then paste it into your draft. The 11-second demo uses sample prompts in a fictional chat.
 
-[Watch the 11-second GIF](media/demo/spotlight-demo.gif) · [Download the MP4](media/demo/spotlight-demo.mp4?raw=true) · [View the prompt library](media/demo/library.png)
+[View a still screenshot](media/demo/spotlight.png) · [Download the MP4](media/demo/spotlight-demo.mp4?raw=true)
+
+### Prompt library
+
+Add, edit, and organize your saved prompts in the browser’s side panel.
+
+<p align="center">
+  <img src="media/demo/library.png" alt="Souffleur prompt library with three saved prompts and controls to add, edit, import, or export prompts" width="420" />
+</p>
 
 ## Use Souffleur
 
